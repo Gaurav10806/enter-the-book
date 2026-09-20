@@ -101,9 +101,11 @@
        style="background-image: url('/bg.jpg');">
   </div>
 
-  <!-- REAL-TIME 360° VR INTERROGATION ROOM PANORAMA IMAGE BACKDROP -->
-  <div id="vr-story-bg" class="fixed inset-0 z-0 bg-cover bg-center hidden pointer-events-none filter brightness-90 contrast-105"
-       style="background-image: url('/vr_interrogation.jpg');">
+  <!-- REAL-TIME 360° VR INTERROGATION ROOM PANORAMA / VIDEO BACKDROP -->
+  <div id="vr-story-bg" class="fixed inset-0 z-0 hidden pointer-events-none overflow-hidden">
+    <video id="interactive-bg-video" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover filter brightness-90 contrast-105">
+      <source src="/this_is_how_the_scenes_are_sup.mp4" type="video/mp4">
+    </video>
     <!-- Dark Vignette Overlay for Crisp White Text Readability -->
     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/80"></div>
   </div>
@@ -117,6 +119,217 @@
     <div class="glass-panel px-5 py-2.5 rounded-full border border-amber-400/60 shadow-2xl flex items-center space-x-2 text-xs text-amber-200 group-hover:scale-110 transition-all duration-300 animate-bounce">
       <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
       <span class="font-semibold">CLICK BOOK TO ENTER STORY</span>
+    </div>
+  </div>
+
+  <!-- ROLE ACCESS SWITCHER MODAL (NO PASSWORD REQUIRED) -->
+  <div id="role-select-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel p-8 rounded-3xl max-w-lg w-full border border-amber-500/50 shadow-2xl text-center space-y-6">
+      <div>
+        <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 mx-auto mb-3">
+          <i data-lucide="shield-check" class="w-8 h-8"></i>
+        </div>
+        <h2 class="font-cinzel text-2xl font-bold text-amber-200">Select Access Persona</h2>
+        <p class="text-xs text-amber-200/70 mt-1">Instant No-Password Single-Click Sign In</p>
+      </div>
+
+      <div class="space-y-3">
+        <button onclick="loginAsRole('User')" class="w-full p-4 rounded-2xl bg-stone-900/90 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-400 text-left transition-all flex items-center justify-between group">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-900/40 text-amber-300 flex items-center justify-center">
+              <i data-lucide="user" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h4 class="font-cinzel font-bold text-stone-100 group-hover:text-amber-300">Reader / User Access</h4>
+              <p class="text-[11px] text-amber-200/60">Experience 3D books, audio, AR/VR & interactive stories.</p>
+            </div>
+          </div>
+          <i data-lucide="arrow-right" class="w-5 h-5 text-amber-400 group-hover:translate-x-1 transition-transform"></i>
+        </button>
+
+        <button onclick="loginAsRole('Publisher')" class="w-full p-4 rounded-2xl bg-stone-900/90 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-400 text-left transition-all flex items-center justify-between group">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-900/40 text-purple-300 flex items-center justify-center">
+              <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h4 class="font-cinzel font-bold text-stone-100 group-hover:text-amber-300">Publisher Portal Access</h4>
+              <p class="text-[11px] text-amber-200/60">Manage leads, reader conversion analytics, & royalties.</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-full font-bold">DASHBOARD</span>
+        </button>
+
+        <button onclick="loginAsRole('Admin')" class="w-full p-4 rounded-2xl bg-stone-900/90 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-400 text-left transition-all flex items-center justify-between group">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-700/40 text-amber-300 flex items-center justify-center">
+              <i data-lucide="shield" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h4 class="font-cinzel font-bold text-stone-100 group-hover:text-amber-300">Admin Access</h4>
+              <p class="text-[11px] text-amber-200/60">System administration, manuscript management & global settings.</p>
+            </div>
+          </div>
+          <i data-lucide="arrow-right" class="w-5 h-5 text-amber-400 group-hover:translate-x-1 transition-transform"></i>
+        </button>
+      </div>
+
+      <div class="text-[10px] font-mono text-amber-400/60 border-t border-amber-500/20 pt-4">
+        🔒 Enterprise Security • Role-Based Access Control (No Password Required)
+      </div>
+    </div>
+  </div>
+
+  <!-- PUBLISHER DASHBOARD OVERLAY VIEW -->
+  <div id="publisher-dashboard-view" class="fixed inset-0 z-40 bg-stone-950 hidden overflow-y-auto pointer-events-auto p-6 md:p-10">
+    <div class="max-w-7xl mx-auto space-y-8">
+      
+      <!-- TOP NAV & PROFILE STATUS -->
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 border-b border-amber-500/20 gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30 text-xs font-mono font-bold">PUBLISHER PORTAL</span>
+            <span class="text-xs text-amber-400/70 font-mono">Penguin Random House • India Region</span>
+          </div>
+          <h2 class="font-cinzel text-3xl font-extrabold text-amber-100 mt-1">Publisher ROI & Lead Intelligence</h2>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <button onclick="openRoleModal()" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/40">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            <span>Switch Role (<strong id="current-active-role">Publisher</strong>)</span>
+          </button>
+          <button onclick="goToHome()" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/40">
+            <i data-lucide="home" class="w-4 h-4"></i>
+            <span>Return to 3D Library</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KEY ANALYTICS STAT CARDS -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">Total Active Leads</span>
+            <i data-lucide="users" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="font-cinzel text-3xl font-extrabold text-amber-100">14,290</p>
+          <span class="text-[11px] text-emerald-400 font-mono font-bold">↑ +24.8% this week</span>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">Book Conversions</span>
+            <i data-lucide="shopping-cart" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="font-cinzel text-3xl font-extrabold text-amber-100">4,815</p>
+          <span class="text-[11px] text-emerald-400 font-mono font-bold">33.7% Conversion Rate</span>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">AR/VR Engagement</span>
+            <i data-lucide="glasses" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="font-cinzel text-3xl font-extrabold text-amber-100">89.4%</p>
+          <span class="text-[11px] text-amber-300 font-mono">Avg 6.2 mins / session</span>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">Projected Revenue</span>
+            <i data-lucide="dollar-sign" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="font-cinzel text-3xl font-extrabold text-amber-100">\$142,450</p>
+          <span class="text-[11px] text-emerald-400 font-mono font-bold">↑ 4.2x traditional book</span>
+        </div>
+      </div>
+
+      <!-- LEADS TABLE & DEMOGRAPHICS -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- LEADS DATA TABLE -->
+        <div class="lg:col-span-2 glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
+          <div class="flex items-center justify-between pb-4 border-b border-stone-800">
+            <div>
+              <h3 class="font-cinzel text-xl font-bold text-amber-200">Recent Reader Leads & Interactive Conversion</h3>
+              <p class="text-xs text-amber-200/60">Live feed of readers completing interactive story branch points</p>
+            </div>
+            <button class="glass-button px-3 py-1.5 rounded-xl text-xs text-amber-300 font-mono flex items-center space-x-1">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Export CSV</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono">
+              <thead>
+                <tr class="text-amber-400/70 border-b border-stone-800 pb-2">
+                  <th class="py-2">READER LEAD</th>
+                  <th class="py-2">BRANCH CHOICE</th>
+                  <th class="py-2">TIME SPENT</th>
+                  <th class="py-2">STATUS</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stone-800 text-stone-200">
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100">aravind.k@gmail.com</td>
+                  <td class="py-3 text-amber-400">Rebel Path B (Defied Bureau)</td>
+                  <td class="py-3">8m 12s</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Purchased Hardcover</span></td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100">priya_sharma88@outlook.com</td>
+                  <td class="py-3 text-blue-300">Compliant Path A (Silent Reader)</td>
+                  <td class="py-3">5m 45s</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold">Audiobook Lead</span></td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100">dev.malhotra@techcorp.in</td>
+                  <td class="py-3 text-amber-400">Rebel Path B (Defied Bureau)</td>
+                  <td class="py-3">12m 04s</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Purchased Hardcover</span></td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100">sanya_books@yahoo.com</td>
+                  <td class="py-3 text-purple-300">AR/VR Scene Completed</td>
+                  <td class="py-3">9m 30s</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold">Pre-Ordered Collector's</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PUBLISHER METRICS SIDEBAR -->
+        <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-6">
+          <h3 class="font-cinzel text-xl font-bold text-amber-200">Publisher Insights</h3>
+
+          <div class="space-y-4 text-xs">
+            <div class="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 space-y-2">
+              <div class="flex justify-between font-bold text-amber-300">
+                <span>Branch Popularity</span>
+                <span>72% Rebel Path B</span>
+              </div>
+              <p class="text-amber-200/60 leading-relaxed">
+                Readers show 3x higher pre-order conversion when selecting the rebellious narrative path in Scene 2.
+              </p>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 space-y-2">
+              <div class="flex justify-between font-bold text-purple-300">
+                <span>AR/VR Re-Watch Rate</span>
+                <span>84.2%</span>
+              </div>
+              <p class="text-amber-200/60 leading-relaxed">
+                Users watch the 360° Interrogation video an average of 2.4 times before completing checkout.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   </div>
 
@@ -137,8 +350,11 @@
 
       <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
         <button onclick="goToHome()" class="text-amber-300 border-b-2 border-amber-400 pb-1 font-semibold">Library</button>
-        <a href="#" class="text-amber-100/70 hover:text-amber-300 transition-colors">Experiences</a>
-        <a href="#" class="text-amber-100/70 hover:text-amber-300 transition-colors">For Publishers</a>
+        <a href="#" onclick="goToHome()" class="text-amber-100/70 hover:text-amber-300 transition-colors">Experiences</a>
+        <button onclick="loginAsRole('Publisher')" class="text-amber-100/70 hover:text-amber-300 transition-colors font-semibold flex items-center space-x-1">
+          <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-400"></i>
+          <span>For Publishers</span>
+        </button>
       </nav>
 
       <div class="flex items-center space-x-4">
@@ -151,9 +367,9 @@
           <i data-lucide="bell" class="w-4 h-4"></i>
           <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
         </button>
-        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-700 to-amber-400 p-[1px] cursor-pointer">
-          <div class="w-full h-full rounded-full bg-stone-900 flex items-center justify-center font-bold text-xs text-amber-200">
-            G
+        <div onclick="openRoleModal()" title="Switch Access Persona / Role" class="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-700 via-purple-500 to-amber-400 p-[1px] cursor-pointer hover:scale-110 transition-transform">
+          <div class="w-full h-full rounded-full bg-stone-900 flex items-center justify-center font-bold text-xs text-amber-200" id="nav-user-avatar">
+            U
           </div>
         </div>
       </div>
@@ -174,7 +390,7 @@
           <i data-lucide="library" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
           <span class="text-[10px] font-medium">My Shelf</span>
         </button>
-        <button class="group flex flex-col items-center p-3 rounded-xl hover:bg-amber-500/10 text-amber-200/60 hover:text-amber-300 transition-all relative">
+        <button onclick="animateBookOpeningAndTransition(); selectExperience('arvrvideo');" class="group flex flex-col items-center p-3 rounded-xl hover:bg-amber-500/10 text-amber-200/60 hover:text-amber-300 transition-all relative">
           <i data-lucide="glasses" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
           <span class="text-[10px] font-medium">AR/VR</span>
         </button>
@@ -203,7 +419,7 @@
 
       <div class="flex items-center space-x-4">
         <span class="text-xs font-mono text-amber-300/80"><span id="current-idx">01</span> / <span id="total-idx">06</span></span>
-        <button id="btn-ar-toggle" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/50">
+        <button id="btn-ar-toggle" onclick="animateBookOpeningAndTransition(); selectExperience('arvrvideo');" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/50">
           <i data-lucide="box" class="w-4 h-4 text-amber-400"></i>
           <span>ENTER AR/VR MODE</span>
         </button>
@@ -458,11 +674,21 @@
     // DISPLAY FULLSCREEN HIGH-RES VR INTERROGATION ROOM BACKDROP
     function showVRPanorama() {
       document.getElementById('default-bg').classList.add('hidden');
-      document.getElementById('vr-story-bg').classList.remove('hidden');
+      const vrBg = document.getElementById('vr-story-bg');
+      vrBg.classList.remove('hidden');
+      const video = document.getElementById('interactive-bg-video');
+      if (video) {
+        video.play().catch(() => {});
+      }
     }
 
     function hideVRPanorama() {
-      document.getElementById('vr-story-bg').classList.add('hidden');
+      const vrBg = document.getElementById('vr-story-bg');
+      vrBg.classList.add('hidden');
+      const video = document.getElementById('interactive-bg-video');
+      if (video) {
+        video.pause();
+      }
       document.getElementById('default-bg').classList.remove('hidden');
     }
 
@@ -500,10 +726,42 @@
       requestAnimationFrame(step);
     }
 
+    let currentRole = 'User';
+
+    function openRoleModal() {
+      document.getElementById('role-select-modal').classList.remove('hidden');
+    }
+
+    function loginAsRole(role) {
+      currentRole = role;
+      document.getElementById('role-select-modal').classList.add('hidden');
+      const activeRoleLabel = document.getElementById('current-active-role');
+      if (activeRoleLabel) activeRoleLabel.textContent = role;
+      
+      const avatar = document.getElementById('nav-user-avatar');
+      if (avatar) avatar.textContent = role.charAt(0);
+
+      if (role === 'Publisher') {
+        hideVRPanorama();
+        document.getElementById('canvas-container').classList.add('hidden');
+        document.getElementById('book-click-trigger').classList.add('hidden');
+        document.getElementById('carousel-left-arrow').classList.add('hidden');
+        document.getElementById('carousel-right-arrow').classList.add('hidden');
+        document.getElementById('main-footer').classList.add('hidden');
+        document.getElementById('open-book-website-view').classList.add('hidden');
+
+        document.getElementById('publisher-dashboard-view').classList.remove('hidden');
+      } else {
+        document.getElementById('publisher-dashboard-view').classList.add('hidden');
+        goToHome();
+      }
+    }
+
     function goToHome() {
       if (coverPivot) coverPivot.rotation.y = 0;
 
       hideVRPanorama();
+      document.getElementById('publisher-dashboard-view').classList.add('hidden');
       document.getElementById('canvas-container').classList.remove('hidden');
       document.getElementById('book-click-trigger').classList.remove('hidden');
       document.getElementById('carousel-left-arrow').classList.remove('hidden');
@@ -628,9 +886,9 @@
                 📖 JOIN THE RESISTANCE — BUY "THE MISSING NATION" NOW
               </a>
               
-              <a href="#" class="inline-block text-xs font-mono text-amber-400 hover:text-amber-300 underline pt-2">
+              <button onclick="loginAsRole('Publisher')" class="inline-block text-xs font-mono text-amber-400 hover:text-amber-300 underline pt-2">
                 📊 View Publisher ROI Analytics Dashboard (Internal Pitch Demo Link)
-              </a>
+              </button>
             </div>
 
           </div>
@@ -642,9 +900,132 @@
       lucide.createIcons();
     }
 
+    function renderAudioBookPlayer() {
+      hideVRPanorama();
+      const detailView = document.getElementById('view-experience-detail');
+      const contentContainer = document.getElementById('detail-dynamic-content');
+
+      document.getElementById('view-cards-overview').classList.add('hidden');
+      detailView.classList.remove('hidden');
+
+      contentContainer.innerHTML = `
+        <div class="parchment-page p-8 rounded-3xl max-w-3xl mx-auto shadow-2xl border border-amber-600">
+          <div class="flex items-center justify-between border-b border-amber-900/20 pb-4 mb-6">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-900 text-amber-100 flex items-center justify-center">
+                <i data-lucide="headphones" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="text-xs font-mono text-amber-800 uppercase font-bold tracking-widest">Audio Book • Chapter 1</span>
+                <h3 class="font-cinzel text-xl font-extrabold text-stone-900">The Raid at Calcutta</h3>
+              </div>
+            </div>
+            <span class="text-xs font-mono bg-amber-900/10 px-3 py-1 rounded-full text-amber-900 font-semibold">12:45 remaining</span>
+          </div>
+
+          <!-- AUDIO NARRATION CONTROLS AND TEXT READING PAGE -->
+          <div class="bg-amber-950/10 p-4 rounded-2xl border border-amber-900/20 mb-6 flex items-center space-x-4">
+            <button onclick="toggleAudioNarration(this)" class="w-12 h-12 rounded-full bg-amber-800 hover:bg-amber-900 text-amber-100 flex items-center justify-center shadow-lg transition-transform hover:scale-105 flex-shrink-0">
+              <i data-lucide="play" class="w-6 h-6 fill-amber-100 ml-1"></i>
+            </button>
+            <div class="flex-1">
+              <div class="flex justify-between text-xs font-mono text-amber-900 font-bold mb-1">
+                <span>Narrator: Spatial Voice Cast</span>
+                <span id="audio-timer">00:00 / 12:45</span>
+              </div>
+              <div class="w-full h-2 bg-amber-900/20 rounded-full overflow-hidden">
+                <div id="audio-progress-bar" class="w-0 h-full bg-amber-800 transition-all duration-300"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="font-serif-vintage text-stone-900 text-base md:text-lg leading-relaxed space-y-4 max-h-[350px] overflow-y-auto pr-2">
+            <p class="first-letter:text-4xl first-letter:font-cinzel first-letter:font-bold first-letter:text-amber-900 first-letter:mr-2 first-letter:float-left">
+              The ink on the morning gazette was still damp when the armored transport turned onto Harrison Road. It was October 1982, but in Lahore and Calcutta, time felt frozen under the weight of the Security Bureau’s decree.
+            </p>
+            <p>
+              Inside the basement of the underground press, Mrityunjay adjusted his round spectacles, blowing dust off the hand-cranked printing plate. The manifesto was titled <em>"The Missing Nation"</em>—a single chapter that proved the borders drawn sixty years ago were built on a silent lie.
+            </p>
+            <p>
+              "If they break these doors tonight," Mrityunjay whispered to the young apprentice, "do not burn the paper. Let them read it. Truth is the only fire they cannot put out."
+            </p>
+          </div>
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    let isAudioPlaying = false;
+    let audioTimerInterval = null;
+    let audioSeconds = 0;
+
+    function toggleAudioNarration(btn) {
+      const icon = btn.querySelector('i');
+      const progressBar = document.getElementById('audio-progress-bar');
+      const timerLabel = document.getElementById('audio-timer');
+
+      if (!isAudioPlaying) {
+        isAudioPlaying = true;
+        btn.innerHTML = `<i data-lucide="pause" class="w-6 h-6 fill-amber-100"></i>`;
+        
+        // Browser Speech Synthesis for audio narration text
+        if ('speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance("The ink on the morning gazette was still damp when the armored transport turned onto Harrison Road. It was October 1982, but in Lahore and Calcutta, time felt frozen under the weight of the Security Bureau's decree.");
+          utterance.rate = 0.95;
+          window.speechSynthesis.speak(utterance);
+        }
+
+        audioTimerInterval = setInterval(() => {
+          audioSeconds++;
+          const mins = Math.floor(audioSeconds / 60).toString().padStart(2, '0');
+          const secs = (audioSeconds % 60).toString().padStart(2, '0');
+          if (timerLabel) timerLabel.textContent = `${mins}:${secs} / 12:45`;
+          if (progressBar) progressBar.style.width = `${Math.min((audioSeconds / 100) * 100, 100)}%`;
+        }, 1000);
+      } else {
+        isAudioPlaying = false;
+        btn.innerHTML = `<i data-lucide="play" class="w-6 h-6 fill-amber-100 ml-1"></i>`;
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+        }
+        clearInterval(audioTimerInterval);
+      }
+      lucide.createIcons();
+    }
+
+    function renderARVRVideoPlayer() {
+      showVRPanorama();
+      const detailView = document.getElementById('view-experience-detail');
+      const contentContainer = document.getElementById('detail-dynamic-content');
+
+      document.getElementById('view-cards-overview').classList.add('hidden');
+      detailView.classList.remove('hidden');
+
+      // PURE VIDEO ONLY - NO OVERLAY TEXT AS REQUESTED
+      contentContainer.innerHTML = `
+        <div class="fixed inset-0 z-50 bg-black flex items-center justify-center">
+          <button onclick="showOverviewCards()" class="absolute top-6 left-6 z-50 glass-button px-5 py-2.5 rounded-full text-xs font-bold text-amber-300 flex items-center space-x-2 border border-amber-400/50 shadow-2xl hover:scale-105 transition-transform">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span>Exit AR/VR Video Scene</span>
+          </button>
+
+          <video autoplay loop controls class="w-full h-full object-cover">
+            <source src="/this_is_how_the_scenes_are_sup.mp4" type="video/mp4">
+          </video>
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
     function selectExperience(type) {
-      if (type === 'visualtexts') {
+      if (type === 'audiobook') {
+        renderAudioBookPlayer();
+      } else if (type === 'visualtexts') {
         renderVisualTextScreen('screen1');
+      } else if (type === 'arvrvideo') {
+        renderARVRVideoPlayer();
       } else {
         renderVisualTextScreen('other');
       }
