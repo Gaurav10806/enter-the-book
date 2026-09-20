@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enter The Book | Immersive Experience</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- OrbitControls -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Google Fonts: Cinzel, Playfair Display & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0b0908;
+      color: #e5e7eb;
+      overflow-x: hidden;
+    }
+    .font-cinzel {
+      font-family: 'Cinzel', serif;
+    }
+    .font-serif-vintage {
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+    .glass-panel {
+      background: rgba(18, 14, 11, 0.75);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(212, 163, 89, 0.25);
+    }
+    .glass-card {
+      background: rgba(28, 22, 16, 0.85);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(212, 163, 89, 0.3);
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+      transform: translateY(-5px) scale(1.02);
+      border-color: rgba(212, 163, 89, 0.8);
+      box-shadow: 0 12px 30px rgba(212, 163, 89, 0.35);
+    }
+    .glass-button {
+      background: rgba(30, 24, 18, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(212, 163, 89, 0.3);
+      transition: all 0.3s ease;
+    }
+    .glass-button:hover {
+      background: rgba(212, 163, 89, 0.3);
+      border-color: rgba(212, 163, 89, 0.8);
+      box-shadow: 0 0 20px rgba(212, 163, 89, 0.4);
+    }
+    .glow-gold {
+      text-shadow: 0 0 25px rgba(212, 163, 89, 0.8);
+    }
+
+    /* PARCHMENT PAGE */
+    .parchment-page {
+      background: rgba(244, 234, 213, 0.95);
+      color: #2b1e17;
+      box-shadow: inset 0 0 30px rgba(80, 50, 20, 0.3), 0 20px 40px rgba(0, 0, 0, 0.8);
+      border: 1px solid #d4a359;
+    }
+
+    /* 3D STAGE */
+    .perspective-stage {
+      perspective: 1600px;
+    }
+    .unfold-book-container {
+      transform-style: preserve-3d;
+      animation: unfoldBookAnim 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes unfoldBookAnim {
+      0% {
+        transform: rotateX(45deg) rotateY(-25deg) scale(0.4) translateY(100px);
+        opacity: 0;
+      }
+      50% {
+        transform: rotateX(15deg) rotateY(-5deg) scale(0.85);
+        opacity: 0.8;
+      }
+      100% {
+        transform: rotateX(0deg) rotateY(0deg) scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+  </style>
+</head>
+<body class="relative w-screen h-screen select-none overflow-x-hidden bg-stone-950">
+
+  <!-- STATIC HIGH-RES VINTAGE LIBRARY BACKGROUND IMAGE -->
+  <div id="default-bg" class="absolute inset-0 z-0 bg-cover bg-center pointer-events-none filter brightness-95" 
+       style="background-image: url('/bg.jpg');">
+  </div>
+
+  <!-- REAL-TIME 360° VR INTERROGATION ROOM PANORAMA IMAGE BACKDROP -->
+  <div id="vr-story-bg" class="fixed inset-0 z-0 bg-cover bg-center hidden pointer-events-none filter brightness-90 contrast-105"
+       style="background-image: url('/vr_interrogation.jpg');">
+    <!-- Dark Vignette Overlay for Crisp White Text Readability -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/80"></div>
+  </div>
+
+  <!-- 3D THREE.JS CANVAS OVERLAY FOR DESK BOOK (HOME VIEW) -->
+  <div id="canvas-container" class="absolute inset-0 z-10 pointer-events-auto"></div>
+
+  <!-- CLICKABLE TRIGGER HOTSPOT OVER THE 3D BOOK -->
+  <div id="book-click-trigger" 
+       class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-[300px] h-[400px] cursor-pointer rounded-2xl group flex flex-col items-center justify-center pointer-events-auto">
+    <div class="glass-panel px-5 py-2.5 rounded-full border border-amber-400/60 shadow-2xl flex items-center space-x-2 text-xs text-amber-200 group-hover:scale-110 transition-all duration-300 animate-bounce">
+      <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+      <span class="font-semibold">CLICK BOOK TO ENTER STORY</span>
+    </div>
+  </div>
+
+  <!-- UI OVERLAY LAYER (HEADER & FOOTER) -->
+  <div class="relative z-20 w-full h-full flex flex-col justify-between pointer-events-none">
+
+    <!-- TOP HEADER -->
+    <header class="w-full px-8 py-4 flex items-center justify-between glass-panel border-b-0 pointer-events-auto">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="goToHome()">
+        <div class="w-10 h-10 rounded-lg bg-amber-900/50 border border-amber-500/50 flex items-center justify-center text-amber-300">
+          <i data-lucide="book-open" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="font-cinzel text-xl font-bold tracking-wider text-amber-200 glow-gold">Enter The Book</h1>
+          <p class="text-[10px] text-amber-400/70 uppercase tracking-widest">Every Book. A New World.</p>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
+        <button onclick="goToHome()" class="text-amber-300 border-b-2 border-amber-400 pb-1 font-semibold">Library</button>
+        <a href="#" class="text-amber-100/70 hover:text-amber-300 transition-colors">Experiences</a>
+        <a href="#" class="text-amber-100/70 hover:text-amber-300 transition-colors">For Publishers</a>
+      </nav>
+
+      <div class="flex items-center space-x-4">
+        <div class="relative hidden sm:block">
+          <input type="text" placeholder="Search books, authors, worlds..." 
+                 class="w-64 px-4 py-2 pl-10 text-xs rounded-full glass-panel text-amber-100 placeholder-amber-200/40 focus:outline-none focus:border-amber-400/60 transition-all">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-amber-400/50"></i>
+        </div>
+        <button class="p-2 rounded-full glass-button text-amber-200 relative">
+          <i data-lucide="bell" class="w-4 h-4"></i>
+          <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+        </button>
+        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-700 to-amber-400 p-[1px] cursor-pointer">
+          <div class="w-full h-full rounded-full bg-stone-900 flex items-center justify-center font-bold text-xs text-amber-200">
+            G
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN MIDDLE CONTENT -->
+    <div class="flex-1 flex justify-between items-center px-8 relative">
+      <div class="glass-panel py-6 px-3 rounded-2xl flex flex-col space-y-6 items-center pointer-events-auto border border-amber-500/30 shadow-2xl">
+        <button onclick="goToHome()" class="group flex flex-col items-center p-3 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300">
+          <i data-lucide="home" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
+          <span class="text-[10px] font-medium">Library</span>
+        </button>
+        <button class="group flex flex-col items-center p-3 rounded-xl hover:bg-amber-500/10 text-amber-200/60 hover:text-amber-300 transition-all">
+          <i data-lucide="compass" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
+          <span class="text-[10px] font-medium">Explore</span>
+        </button>
+        <button class="group flex flex-col items-center p-3 rounded-xl hover:bg-amber-500/10 text-amber-200/60 hover:text-amber-300 transition-all">
+          <i data-lucide="library" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
+          <span class="text-[10px] font-medium">My Shelf</span>
+        </button>
+        <button class="group flex flex-col items-center p-3 rounded-xl hover:bg-amber-500/10 text-amber-200/60 hover:text-amber-300 transition-all relative">
+          <i data-lucide="glasses" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
+          <span class="text-[10px] font-medium">AR/VR</span>
+        </button>
+      </div>
+
+      <div id="carousel-left-arrow" class="absolute left-1/4 top-1/2 -translate-y-1/2 pointer-events-auto hidden md:block z-20">
+        <button id="btn-prev-book" class="p-4 rounded-full glass-button text-amber-200 shadow-2xl">
+          <i data-lucide="chevron-left" class="w-6 h-6"></i>
+        </button>
+      </div>
+      <div id="carousel-right-arrow" class="absolute right-12 top-1/2 -translate-y-1/2 pointer-events-auto hidden md:block z-20">
+        <button id="btn-next-book" class="p-4 rounded-full glass-button text-amber-200 shadow-2xl">
+          <i data-lucide="chevron-right" class="w-6 h-6"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer id="main-footer" class="w-full px-8 pb-6 pt-2 flex flex-col md:flex-row items-center justify-between pointer-events-auto gap-4">
+      <div class="flex items-center space-x-2 text-[11px] text-amber-400/70 uppercase tracking-widest">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span>A More Immersive Tomorrow</span>
+      </div>
+
+      <div id="book-thumbnails" class="glass-panel p-2 rounded-2xl flex items-center space-x-3 overflow-x-auto max-w-full md:max-w-3xl border border-amber-500/30"></div>
+
+      <div class="flex items-center space-x-4">
+        <span class="text-xs font-mono text-amber-300/80"><span id="current-idx">01</span> / <span id="total-idx">06</span></span>
+        <button id="btn-ar-toggle" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/50">
+          <i data-lucide="box" class="w-4 h-4 text-amber-400"></i>
+          <span>ENTER AR/VR MODE</span>
+        </button>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- PAGE 2: OPEN BOOK EXPERIENCE WEBSITE VIEW -->
+  <div id="open-book-website-view" class="fixed inset-0 z-40 bg-transparent hidden overflow-y-auto pointer-events-auto py-8 px-4 md:px-12 perspective-stage">
+    
+    <!-- TOP BACK TO LIBRARY BUTTON -->
+    <div id="top-nav-bar-reading" class="max-w-6xl mx-auto flex items-center justify-between mb-4">
+      <button onclick="goToHome()" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-500/40 shadow-2xl">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        <span>Return to 3D Library</span>
+      </button>
+      <div class="text-center">
+        <span class="text-xs text-amber-400 tracking-widest uppercase font-semibold glow-gold">NOW READING</span>
+        <h2 class="font-cinzel text-xl font-bold text-amber-100 glow-gold">The Missing Nation</h2>
+      </div>
+      <div class="w-32"></div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-5xl mx-auto relative perspective-stage">
+      
+      <div id="open-book-pages" class="rounded-2xl p-6 md:p-10 relative min-h-[560px] flex flex-col justify-between">
+        
+        <div id="page-content-display" class="transition-all duration-500">
+          
+          <!-- DEFAULT OVERVIEW: 5 MAIN CARDS GRID -->
+          <div id="view-cards-overview" class="parchment-page p-8 rounded-2xl">
+            <div class="text-center mb-8">
+              <span class="font-cinzel text-xs font-bold text-amber-900 tracking-widest uppercase">Select an Immersive Dimension</span>
+              <h3 class="font-cinzel text-3xl font-extrabold text-stone-900 mt-1">Experience "The Missing Nation"</h3>
+              <p class="text-xs text-stone-800 italic max-w-lg mx-auto mt-2">"What if history had taken a different turn? Step beyond the written word into interactive worlds."</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div onclick="selectExperience('audiobook')" class="glass-card p-6 rounded-2xl cursor-pointer group bg-stone-900/95 border border-amber-500/40 text-amber-100">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 mb-4 group-hover:scale-110 transition-transform">
+                  <i data-lucide="headphones" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-cinzel text-xl font-bold text-amber-200">Audio Book</h4>
+                <p class="text-xs text-amber-200/70 mt-2">Spatial 3D Audio narration with atmospheric soundscapes and voice cast.</p>
+                <div class="mt-6 flex items-center justify-between text-xs text-amber-400 font-semibold">
+                  <span>Listen Chapter 1</span>
+                  <i data-lucide="play" class="w-4 h-4 fill-amber-400"></i>
+                </div>
+              </div>
+
+              <div onclick="selectExperience('visualtexts')" class="glass-card p-6 rounded-2xl cursor-pointer group bg-stone-900/95 border border-amber-500/40 text-amber-100">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 mb-4 group-hover:scale-110 transition-transform">
+                  <i data-lucide="sparkles" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-cinzel text-xl font-bold text-amber-200">Interactive Story</h4>
+                <p class="text-xs text-amber-200/70 mt-2">Step inside the 360° Interrogation Room with branching story choices.</p>
+                <div class="mt-6 flex items-center justify-between text-xs text-amber-400 font-semibold">
+                  <span>Enter 360° Scene</span>
+                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </div>
+              </div>
+
+              <div onclick="selectExperience('arvrvideo')" class="glass-card p-6 rounded-2xl cursor-pointer group bg-stone-900/95 border border-amber-500/40 text-amber-100">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 mb-4 group-hover:scale-110 transition-transform">
+                  <i data-lucide="glasses" class="w-6 h-6"></i>
+                </div>
+                <h4 class="font-cinzel text-xl font-bold text-amber-200">AR/VR Video Scene</h4>
+                <p class="text-xs text-amber-200/70 mt-2">Immerse into key 360° virtual reality cinematic reenactments.</p>
+                <div class="mt-6 flex items-center justify-between text-xs text-amber-400 font-semibold">
+                  <span>Launch VR Scene</span>
+                  <i data-lucide="video" class="w-4 h-4"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div onclick="selectExperience('characters')" class="glass-card p-5 rounded-2xl cursor-pointer group bg-stone-900/95 border border-amber-500/40 text-amber-100 flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 flex-shrink-0 group-hover:scale-110 transition-transform">
+                  <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+                <div class="flex-1">
+                  <h4 class="font-cinzel text-lg font-bold text-amber-200">Meet The Characters</h4>
+                  <p class="text-xs text-amber-200/70 mt-1">Interactive 3D character profiles, lore, relationships & backstories.</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-amber-400"></i>
+              </div>
+
+              <div onclick="selectExperience('map')" class="glass-card p-5 rounded-2xl cursor-pointer group bg-stone-900/95 border border-amber-500/40 text-amber-100 flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300 flex-shrink-0 group-hover:scale-110 transition-transform">
+                  <i data-lucide="map-pin" class="w-6 h-6"></i>
+                </div>
+                <div class="flex-1">
+                  <h4 class="font-cinzel text-lg font-bold text-amber-200">Location Map</h4>
+                  <p class="text-xs text-amber-200/70 mt-1">3D interactive fantasy map of territories, kingdoms & battlefields.</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-amber-400"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- DYNAMIC OVERLAY SCREENS FOR INTERACTIVE STORY -->
+          <div id="view-experience-detail" class="hidden">
+            <div class="flex items-center justify-between mb-4">
+              <button onclick="showOverviewCards()" class="text-xs font-bold text-amber-300 hover:text-amber-100 flex items-center space-x-1 glass-button px-4 py-2 rounded-xl border border-amber-400/40 shadow-2xl">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                <span>Back to Options</span>
+              </button>
+            </div>
+            <div id="detail-dynamic-content"></div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- THREE.JS SCRIPT -->
+  <script>
+    lucide.createIcons();
+
+    const BOOKS = [
+      {
+        id: 'missing-nation',
+        title: 'The Missing Nation',
+        author: 'ROHIT AGARWAL',
+        subtitle: 'WHAT IF HISTORY HAD TAKEN A DIFFERENT TURN?',
+        coverBg: '#21140c',
+        accent: '#d4a359'
+      }
+    ];
+
+    let currentIndex = 0;
+    let isTransitioning = false;
+
+    // THREE.JS SETUP FOR DESK BOOK
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 0, 4.0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xfff5e6, 1.4);
+    scene.add(ambientLight);
+
+    const deskSpotlight = new THREE.SpotLight(0xffe8c2, 4.0, 10, Math.PI / 4, 0.5);
+    deskSpotlight.position.set(0, 2.5, 3.0);
+    deskSpotlight.castShadow = true;
+    scene.add(deskSpotlight);
+
+    let activeBookGroup = null;
+    let coverPivot = null;
+
+    function create3DBook(data) {
+      const group = new THREE.Group();
+      const width = 1.45;
+      const height = 2.05;
+      const depth = 0.28;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 600;
+      canvas.height = 850;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = data.coverBg;
+      ctx.fillRect(0, 0, 600, 850);
+
+      ctx.strokeStyle = data.accent;
+      ctx.lineWidth = 14;
+      ctx.strokeRect(25, 25, 550, 800);
+      ctx.lineWidth = 4;
+      ctx.strokeRect(40, 40, 520, 770);
+
+      ctx.fillStyle = data.accent;
+      ctx.font = '600 20px Cinzel, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(data.subtitle, 300, 130);
+
+      ctx.beginPath();
+      ctx.arc(300, 380, 130, Math.PI, 0);
+      ctx.lineTo(430, 520);
+      ctx.lineTo(170, 520);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.fillStyle = '#fffbeb';
+      ctx.font = '700 50px Cinzel, serif';
+      const words = data.title.split(' ');
+      if (words.length >= 3) {
+        ctx.fillText(words.slice(0, 2).join(' '), 300, 380);
+        ctx.fillText(words.slice(2).join(' '), 300, 450);
+      } else if (words.length === 2) {
+        ctx.fillText(words[0], 300, 390);
+        ctx.fillText(words[1], 300, 450);
+      } else {
+        ctx.fillText(data.title, 300, 410);
+      }
+
+      ctx.fillStyle = data.accent;
+      ctx.font = '600 26px Cinzel, serif';
+      ctx.fillText(data.author, 300, 750);
+
+      const coverTexture = new THREE.CanvasTexture(canvas);
+
+      const pageGeo = new THREE.BoxGeometry(width - 0.05, height - 0.05, depth - 0.04);
+      const pageMat = new THREE.MeshStandardMaterial({ color: 0xebdcc1, roughness: 0.8 });
+      const pagesMesh = new THREE.Mesh(pageGeo, pageMat);
+      group.add(pagesMesh);
+
+      const coverGeo = new THREE.BoxGeometry(width, height, 0.02);
+      const coverMat = new THREE.MeshStandardMaterial({ map: coverTexture, roughness: 0.3, metalness: 0.1 });
+      const frontCoverMesh = new THREE.Mesh(coverGeo, coverMat);
+      frontCoverMesh.position.set(width / 2, 0, depth / 2);
+
+      coverPivot = new THREE.Group();
+      coverPivot.position.set(-width / 2, 0, 0);
+      coverPivot.add(frontCoverMesh);
+      group.add(coverPivot);
+
+      return { group, coverPivot };
+    }
+
+    function renderBook(idx) {
+      if (activeBookGroup) scene.remove(activeBookGroup);
+      const data = BOOKS[idx];
+      const created = create3DBook(data);
+      activeBookGroup = created.group;
+      coverPivot = created.coverPivot;
+
+      activeBookGroup.position.set(0.1, -0.05, 0);
+      activeBookGroup.rotation.set(0.08, -0.25, 0.02);
+      scene.add(activeBookGroup);
+
+      document.getElementById('current-idx').textContent = (idx + 1).toString().padStart(2, '0');
+    }
+
+    renderBook(0);
+
+    // DISPLAY FULLSCREEN HIGH-RES VR INTERROGATION ROOM BACKDROP
+    function showVRPanorama() {
+      document.getElementById('default-bg').classList.add('hidden');
+      document.getElementById('vr-story-bg').classList.remove('hidden');
+    }
+
+    function hideVRPanorama() {
+      document.getElementById('vr-story-bg').classList.add('hidden');
+      document.getElementById('default-bg').classList.remove('hidden');
+    }
+
+    function animateBookOpeningAndTransition() {
+      if (isTransitioning) return;
+      isTransitioning = true;
+
+      let startTime = null;
+      const duration = 800;
+
+      function step(time) {
+        if (!startTime) startTime = time;
+        const progress = Math.min((time - startTime) / duration, 1);
+
+        if (coverPivot) {
+          coverPivot.rotation.y = -progress * Math.PI * 0.85;
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(step);
+        } else {
+          document.getElementById('canvas-container').classList.add('hidden');
+          document.getElementById('book-click-trigger').classList.add('hidden');
+          document.getElementById('carousel-left-arrow').classList.add('hidden');
+          document.getElementById('carousel-right-arrow').classList.add('hidden');
+          document.getElementById('main-footer').classList.add('hidden');
+
+          const websiteView = document.getElementById('open-book-website-view');
+          websiteView.classList.remove('hidden');
+
+          isTransitioning = false;
+        }
+      }
+
+      requestAnimationFrame(step);
+    }
+
+    function goToHome() {
+      if (coverPivot) coverPivot.rotation.y = 0;
+
+      hideVRPanorama();
+      document.getElementById('canvas-container').classList.remove('hidden');
+      document.getElementById('book-click-trigger').classList.remove('hidden');
+      document.getElementById('carousel-left-arrow').classList.remove('hidden');
+      document.getElementById('carousel-right-arrow').classList.remove('hidden');
+      document.getElementById('main-footer').classList.remove('hidden');
+
+      document.getElementById('open-book-website-view').classList.add('hidden');
+      isTransitioning = false;
+    }
+
+    document.getElementById('book-click-trigger').addEventListener('click', animateBookOpeningAndTransition);
+
+    // DYNAMIC SCRIPTED NARRATIVE FLOW OVER HIGH-RES INTERROGATION ROOM BACKDROP
+    function renderVisualTextScreen(screenName) {
+      showVRPanorama(); // Always display full high-res Interrogation Room background!
+
+      const detailView = document.getElementById('view-experience-detail');
+      const contentContainer = document.getElementById('detail-dynamic-content');
+
+      document.getElementById('view-cards-overview').classList.add('hidden');
+      detailView.classList.remove('hidden');
+
+      if (screenName === 'screen1') {
+        contentContainer.innerHTML = `
+          <div class="p-8 rounded-3xl bg-stone-950/90 backdrop-blur-xl text-stone-100 shadow-2xl border border-stone-700 max-w-3xl mx-auto my-auto border-l-4 border-l-red-600">
+            
+            <div class="flex items-center justify-between border-b border-stone-700/60 pb-3 mb-6">
+              <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full bg-red-600 animate-ping"></span>
+                <span class="text-xs font-mono text-red-400 font-bold uppercase tracking-widest">Scene 1 — The Checkpoint (Lahore Security Bureau)</span>
+              </div>
+              <span class="text-xs font-mono text-amber-200/80">1982 • Capital of Undivided India</span>
+            </div>
+
+            <div class="font-serif-vintage text-stone-100 text-base md:text-lg leading-relaxed space-y-4 my-6">
+              <p class="italic text-amber-200/90">The State Security Bureau just raided the Calcutta printing press. They found your name listed inside the secret files of the underground rebel poet, <strong class="text-amber-400">Mrityunjay</strong>.</p>
+              <p>A heavy boot kicks your door open. You are shoved into a concrete room with a single blinking desk lamp. An investigator slides a manila folder across the cold metal table.</p>
+              <p class="font-bold text-amber-300 text-xl">"Tell us where the eastern rebels are hiding, or you go down with him."</p>
+            </div>
+
+            <!-- CHOICE BUTTONS OVERLAY -->
+            <div id="choice-buttons-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-stone-700/60">
+              <button onclick="renderVisualTextScreen('pathA')" class="p-5 rounded-2xl bg-stone-900/90 hover:bg-amber-500/30 border border-stone-700 hover:border-amber-400 text-left transition-all group shadow-2xl">
+                <span class="text-xs text-amber-400 font-bold block mb-1">CHOICE 1</span>
+                <p class="font-cinzel text-sm font-bold text-stone-100 group-hover:text-amber-300">"I know nothing. I am just a reader."</p>
+              </button>
+              <button onclick="renderVisualTextScreen('pathB')" class="p-5 rounded-2xl bg-stone-900/90 hover:bg-amber-500/30 border border-stone-700 hover:border-amber-400 text-left transition-all group shadow-2xl">
+                <span class="text-xs text-amber-400 font-bold block mb-1">CHOICE 2</span>
+                <p class="font-cinzel text-sm font-bold text-stone-100 group-hover:text-amber-300">"The East will rise. Do your worst."</p>
+              </button>
+            </div>
+
+          </div>
+        `;
+      } else if (screenName === 'pathA') {
+        contentContainer.innerHTML = `
+          <div class="p-8 rounded-3xl bg-[#0f172a]/95 backdrop-blur-xl text-slate-100 shadow-2xl border border-blue-600/50 max-w-3xl mx-auto border-l-4 border-l-blue-400">
+            
+            <div class="flex items-center justify-between border-b border-blue-800/40 pb-3 mb-6">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
+                <span class="text-xs font-mono text-blue-300 font-bold uppercase tracking-widest">Scene 2 — Path A: The Compliant Path</span>
+              </div>
+              <span class="text-xs font-mono text-blue-300">Interrogation Room 4B</span>
+            </div>
+
+            <div class="font-serif-vintage text-slate-100 text-base md:text-lg leading-relaxed space-y-4 my-6">
+              <p class="italic text-blue-300">The investigator smiles coldly and leans back into the shadows.</p>
+              <p class="text-xl font-semibold text-white">"Everyone is 'just a reader' until the printing presses start burning. You think compliance keeps you safe here in the West? The state knows your family. They know your history. By staying silent, you have chosen your side. If you won't talk to us, we will make sure you vanish into the exact same silence."</p>
+              <p class="text-xs font-mono text-slate-300">Heavy, synchronized footsteps stop right outside the iron door. A heavy deadbolt slowly slides open.</p>
+            </div>
+
+            <div class="pt-6 border-t border-blue-800/40">
+              <button onclick="renderVisualTextScreen('screen3')" class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 font-cinzel font-bold text-white text-sm tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2">
+                <span>Face the consequences...</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+          </div>
+        `;
+      } else if (screenName === 'pathB') {
+        contentContainer.innerHTML = `
+          <div class="p-8 rounded-3xl bg-[#24170e]/95 backdrop-blur-xl text-amber-100 shadow-2xl border border-amber-600/50 max-w-3xl mx-auto border-l-4 border-l-amber-500">
+            
+            <div class="flex items-center justify-between border-b border-amber-800/40 pb-3 mb-6">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                <span class="text-xs font-mono text-amber-400 font-bold uppercase tracking-widest">Scene 2 — Path B: The Rebel Path</span>
+              </div>
+              <span class="text-xs font-mono text-amber-300">Interrogation Room 4B</span>
+            </div>
+
+            <div class="font-serif-vintage text-amber-100 text-base md:text-lg leading-relaxed space-y-4 my-6">
+              <p class="italic text-amber-400">The investigator slams both hands down on the metal table, his eyes blazing.</p>
+              <p class="text-xl font-semibold text-amber-100">"You think you're a martyr? The eastern jungles of Assam are already burning, and your poet Mrityunjay won't be there to save you. By defying the Bureau, you have signed a confession of treason. We don't need your words anymore—we already have your execution order."</p>
+              <p class="text-xs font-mono text-red-400 font-bold">Suddenly, a high-pitched defense siren wails across the building. The power grids flicker and plunge the text into pitch black.</p>
+            </div>
+
+            <div class="pt-6 border-t border-amber-800/40">
+              <button onclick="renderVisualTextScreen('screen3')" class="w-full py-4 rounded-xl bg-amber-600 hover:bg-amber-500 font-cinzel font-bold text-stone-950 text-sm tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2">
+                <span>Seize the moment...</span>
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+          </div>
+        `;
+      } else if (screenName === 'screen3') {
+        contentContainer.innerHTML = `
+          <div class="p-8 rounded-3xl bg-stone-950/95 backdrop-blur-xl text-stone-100 shadow-2xl border border-red-700/60 text-center max-w-3xl mx-auto">
+            
+            <span class="text-xs font-mono text-red-500 uppercase tracking-widest font-bold block mb-2">THE FILE IS SEALED</span>
+            <h2 class="font-cinzel text-3xl font-extrabold text-red-600 mb-4 glow-gold">History is rewritten by those who survive.</h2>
+
+            <p class="font-serif-vintage text-base md:text-lg text-stone-300 max-w-2xl mx-auto leading-relaxed mb-8">
+              Mrityunjay's rebellion has already broken the perimeter walls of the Bureau, and you are trapped right in the line of fire. Will India stand united under tyranny, or shatter into a million pieces? Uncover the truth before the state clears your file permanently.
+            </p>
+
+            <div class="space-y-4 max-w-md mx-auto">
+              <a href="#" class="block w-full py-4 px-6 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 font-cinzel font-bold text-white text-sm tracking-wider uppercase shadow-xl transition-all hover:scale-105 border border-red-500/40">
+                📖 JOIN THE RESISTANCE — BUY "THE MISSING NATION" NOW
+              </a>
+              
+              <a href="#" class="inline-block text-xs font-mono text-amber-400 hover:text-amber-300 underline pt-2">
+                📊 View Publisher ROI Analytics Dashboard (Internal Pitch Demo Link)
+              </a>
+            </div>
+
+          </div>
+        `;
+      } else {
+        hideVRPanorama();
+      }
+
+      lucide.createIcons();
+    }
+
+    function selectExperience(type) {
+      if (type === 'visualtexts') {
+        renderVisualTextScreen('screen1');
+      } else {
+        renderVisualTextScreen('other');
+      }
+    }
+
+    function showOverviewCards() {
+      hideVRPanorama();
+      document.getElementById('view-experience-detail').classList.add('hidden');
+      document.getElementById('view-cards-overview').classList.remove('hidden');
+    }
+
+    // ORBIT CONTROLS FOR DESK BOOK
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // POPULATE THUMBNAILS
+    const shelfContainer = document.getElementById('book-thumbnails');
+    document.getElementById('total-idx').textContent = BOOKS.length.toString().padStart(2, '0');
+
+    BOOKS.forEach((b, idx) => {
+      const card = document.createElement('div');
+      card.className = `book-thumb flex-shrink-0 w-24 h-32 rounded-xl p-2 cursor-pointer transition-all duration-300 border flex flex-col justify-end relative overflow-hidden ${
+        idx === 0 ? 'bg-amber-500/20 border-amber-400 scale-105 shadow-lg' : 'bg-stone-900/60 border-amber-500/20 hover:border-amber-400/50 hover:scale-100 opacity-70'
+      }`;
+      card.onclick = () => {
+        currentIndex = idx;
+        renderBook(currentIndex);
+      };
+
+      card.innerHTML = `
+        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
+        <div class="relative z-10">
+          <p class="font-cinzel text-[10px] font-bold text-amber-100 truncate">${b.title}</p>
+          <p class="text-[8px] text-amber-400/80 truncate">${b.author}</p>
+        </div>
+      `;
+      shelfContainer.appendChild(card);
+    });
+
+    // RENDER LOOP
+    const clock = new THREE.Clock();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const elapsedTime = clock.getElapsedTime();
+
+      if (activeBookGroup && !isTransitioning) {
+        activeBookGroup.position.y = -0.05 + Math.sin(elapsedTime * 1.5) * 0.03;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
+
