@@ -97,7 +97,7 @@
 <body class="relative w-screen h-screen select-none overflow-x-hidden bg-stone-950">
 
   <!-- STATIC HIGH-RES VINTAGE LIBRARY BACKGROUND IMAGE -->
-  <div id="default-bg" class="absolute inset-0 z-0 bg-cover bg-center pointer-events-none filter brightness-95" 
+  <div id="default-bg" class="fixed inset-0 z-0 bg-cover bg-center pointer-events-none filter brightness-95" 
        style="background-image: url('/bg.jpg');">
   </div>
 
@@ -108,6 +108,18 @@
     </video>
     <!-- Dark Vignette Overlay for Crisp White Text Readability -->
     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/80"></div>
+  </div>
+
+  <!-- REAL-TIME 3D WEBXR INTERROGATION ROOM CANVAS CONTAINER (LAHORE SECURITY BUREAU 1982) -->
+  <div id="story-3d-canvas-container" class="fixed inset-0 z-0 hidden pointer-events-auto overflow-hidden">
+    <div id="story-3d-canvas-mount" class="w-full h-full"></div>
+    <!-- Subtle Vignette Overlay for High Visibility and Crisp Text Readability -->
+    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/60 pointer-events-none"></div>
+    <!-- Interactive Hover Tooltip for 3D Manila Folder -->
+    <div id="folder-tooltip" class="absolute bottom-10 left-1/2 -translate-x-1/2 hidden glass-panel px-6 py-3 rounded-2xl border border-amber-400/60 shadow-2xl text-center pointer-events-none transition-all duration-300 z-30">
+      <span class="text-xs font-mono text-amber-300 font-bold uppercase tracking-widest block">📁 CLASSIFIED — LAHORE SECURITY BUREAU</span>
+      <span class="text-[11px] text-stone-300">Click Manila Folder on table to inspect secret files</span>
+    </div>
   </div>
 
   <!-- 3D THREE.JS CANVAS OVERLAY FOR DESK BOOK (HOME VIEW) -->
@@ -176,6 +188,33 @@
 
       <div class="text-[10px] font-mono text-amber-400/60 border-t border-amber-500/20 pt-4">
         🔒 Enterprise Security • Role-Based Access Control (No Password Required)
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE / TABLET DESKTOP-ONLY FALLBACK SCREEN (< 1024px) -->
+  <div id="mobile-fallback-screen" class="fixed inset-0 z-50 bg-stone-950 flex items-center justify-center p-6 hidden">
+    <div class="glass-panel p-8 rounded-3xl max-w-md w-full border border-amber-500/50 shadow-2xl text-center space-y-6">
+      <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 mx-auto">
+        <i data-lucide="monitor" class="w-8 h-8"></i>
+      </div>
+      <div>
+        <span class="text-[10px] font-mono text-amber-400 uppercase tracking-widest font-bold block mb-1">ENTER THE BOOK • 3D STORY</span>
+        <h2 class="font-cinzel text-xl font-bold text-amber-100">Immersive 3D Story</h2>
+        <p class="text-xs text-amber-200/70 mt-3 leading-relaxed">
+          This experience is designed for desktop browsers. Open it on a laptop or desktop to explore the story.
+        </p>
+      </div>
+
+      <div class="space-y-3 pt-2">
+        <button onclick="dismissMobileFallbackAndContinue()" class="w-full py-3.5 px-5 rounded-2xl bg-amber-600 hover:bg-amber-500 text-stone-950 font-cinzel font-bold text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2">
+          <span>Continue with 2D Story</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="text-[10px] font-mono text-amber-400/60 border-t border-amber-500/20 pt-4">
+        🖥️ Recommended Viewport: 1024px or larger
       </div>
     </div>
   </div>
@@ -390,9 +429,9 @@
           <i data-lucide="library" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
           <span class="text-[10px] font-medium">My Shelf</span>
         </button>
-        <button onclick="animateBookOpeningAndTransition(); selectExperience('arvrvideo');" class="group flex flex-col items-center p-3 rounded-xl hover:bg-amber-500/10 text-amber-200/60 hover:text-amber-300 transition-all relative">
-          <i data-lucide="glasses" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
-          <span class="text-[10px] font-medium">AR/VR</span>
+        <button onclick="animateBookOpeningAndTransition(); selectExperience('visualtexts');" class="group flex flex-col items-center p-3 rounded-xl hover:bg-amber-500/10 text-amber-200/60 hover:text-amber-300 transition-all relative">
+          <i data-lucide="box" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
+          <span class="text-[10px] font-medium">3D Scenes</span>
         </button>
       </div>
 
@@ -419,9 +458,9 @@
 
       <div class="flex items-center space-x-4">
         <span class="text-xs font-mono text-amber-300/80"><span id="current-idx">01</span> / <span id="total-idx">06</span></span>
-        <button id="btn-ar-toggle" onclick="animateBookOpeningAndTransition(); selectExperience('arvrvideo');" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/50">
+        <button id="btn-ar-toggle" onclick="animateBookOpeningAndTransition(); selectExperience('visualtexts');" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/50">
           <i data-lucide="box" class="w-4 h-4 text-amber-400"></i>
-          <span>ENTER AR/VR MODE</span>
+          <span>ENTER 3D SCENES</span>
         </button>
       </div>
     </footer>
@@ -429,10 +468,10 @@
   </div>
 
   <!-- PAGE 2: OPEN BOOK EXPERIENCE WEBSITE VIEW -->
-  <div id="open-book-website-view" class="fixed inset-0 z-40 bg-transparent hidden overflow-y-auto pointer-events-auto py-8 px-4 md:px-12 perspective-stage">
+  <div id="open-book-website-view" class="fixed inset-0 z-40 bg-transparent hidden overflow-y-auto pointer-events-none py-8 px-4 md:px-12 perspective-stage">
     
     <!-- TOP BACK TO LIBRARY BUTTON -->
-    <div id="top-nav-bar-reading" class="max-w-6xl mx-auto flex items-center justify-between mb-4">
+    <div id="top-nav-bar-reading" class="max-w-6xl mx-auto flex items-center justify-between mb-4 pointer-events-auto">
       <button onclick="goToHome()" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-500/40 shadow-2xl">
         <i data-lucide="arrow-left" class="w-4 h-4"></i>
         <span>Return to 3D Library</span>
@@ -445,14 +484,14 @@
     </div>
 
     <!-- MAIN CONTAINER -->
-    <div class="max-w-5xl mx-auto relative perspective-stage">
+    <div class="max-w-5xl mx-auto relative perspective-stage pointer-events-none">
       
-      <div id="open-book-pages" class="rounded-2xl p-6 md:p-10 relative min-h-[560px] flex flex-col justify-between">
+      <div id="open-book-pages" class="rounded-2xl p-6 md:p-10 relative min-h-[560px] flex flex-col justify-between pointer-events-none">
         
-        <div id="page-content-display" class="transition-all duration-500">
+        <div id="page-content-display" class="transition-all duration-500 pointer-events-none">
           
           <!-- DEFAULT OVERVIEW: 5 MAIN CARDS GRID -->
-          <div id="view-cards-overview" class="parchment-page p-8 rounded-2xl">
+          <div id="view-cards-overview" class="parchment-page p-8 rounded-2xl pointer-events-auto">
             <div class="text-center mb-8">
               <span class="font-cinzel text-xs font-bold text-amber-900 tracking-widest uppercase">Select an Immersive Dimension</span>
               <h3 class="font-cinzel text-3xl font-extrabold text-stone-900 mt-1">Experience "The Missing Nation"</h3>
@@ -523,14 +562,19 @@
           </div>
 
           <!-- DYNAMIC OVERLAY SCREENS FOR INTERACTIVE STORY -->
-          <div id="view-experience-detail" class="hidden">
-            <div class="flex items-center justify-between mb-4">
+          <div id="view-experience-detail" class="hidden pointer-events-none">
+            <div class="flex items-center justify-between mb-4 pointer-events-auto">
               <button onclick="showOverviewCards()" class="text-xs font-bold text-amber-300 hover:text-amber-100 flex items-center space-x-1 glass-button px-4 py-2 rounded-xl border border-amber-400/40 shadow-2xl">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
                 <span>Back to Options</span>
               </button>
+
+              <div id="desktop-3d-info-bar" class="flex items-center space-x-2 glass-button px-4 py-2 rounded-xl text-xs font-mono font-semibold text-amber-300 border border-amber-400/40 shadow-2xl">
+                <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-amber-400"></i>
+                <span>🖱️ DRAG TO EXPLORE • 1982 LAHORE</span>
+              </div>
             </div>
-            <div id="detail-dynamic-content"></div>
+            <div id="detail-dynamic-content" class="pointer-events-none"></div>
           </div>
 
         </div>
@@ -555,6 +599,31 @@
         accent: '#d4a359'
       }
     ];
+
+    const DESKTOP_BREAKPOINT = 1024;
+    let mobileBypass2D = false;
+
+    function isDesktopViewport() {
+      return window.innerWidth >= DESKTOP_BREAKPOINT;
+    }
+
+    function checkResponsiveViewport() {
+      const fallbackScreen = document.getElementById('mobile-fallback-screen');
+      if (!isDesktopViewport() && !mobileBypass2D) {
+        if (fallbackScreen) fallbackScreen.classList.remove('hidden');
+      } else {
+        if (fallbackScreen) fallbackScreen.classList.add('hidden');
+      }
+    }
+
+    function dismissMobileFallbackAndContinue() {
+      mobileBypass2D = true;
+      const fallbackScreen = document.getElementById('mobile-fallback-screen');
+      if (fallbackScreen) fallbackScreen.classList.add('hidden');
+      animateBookOpeningAndTransition();
+    }
+
+    window.addEventListener('resize', checkResponsiveViewport);
 
     let currentIndex = 0;
     let isTransitioning = false;
@@ -656,6 +725,7 @@
     }
 
     function renderBook(idx) {
+      if (!isDesktopViewport()) return;
       if (activeBookGroup) scene.remove(activeBookGroup);
       const data = BOOKS[idx];
       const created = create3DBook(data);
@@ -671,24 +741,526 @@
 
     renderBook(0);
 
-    // DISPLAY FULLSCREEN HIGH-RES VR INTERROGATION ROOM BACKDROP
+    // ----------------------------------------------------
+    // 3D INTERROGATION ROOM WEBXR ENGINE (LAHORE SECURITY BUREAU 1982)
+    // ----------------------------------------------------
+    let story3dRenderer = null;
+    let story3dScene = null;
+    let story3dCamera = null;
+    let story3dControls = null;
+
+    let deskLampSpotlight = null;
+    let deskLampBulb = null;
+    let redSecurityLight = null;
+    let redSecurityMesh = null;
+    let interrogationDoor = null;
+    let doorLockHandle = null;
+    let manilaFolderMesh = null;
+    let dustParticlesMesh = null;
+    let raycaster3D = null;
+    let mouseVector3D = null;
+    let storyRoomState = 'screen1';
+    let xrSessionActive = null;
+    let webgl3dFailed = false;
+    let isUserInteracting3D = false;
+
+    function showToastNotification(text) {
+      let toast = document.getElementById('app-toast-notif');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'app-toast-notif';
+        toast.className = 'fixed top-6 left-1/2 -translate-x-1/2 z-50 glass-panel px-6 py-3 rounded-2xl border border-amber-400/60 text-amber-200 text-xs font-semibold shadow-2xl flex items-center space-x-2 transition-all duration-300 transform translate-y-0 opacity-100';
+        document.body.appendChild(toast);
+      }
+      toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-amber-400"></i> <span>${text}</span>`;
+      lucide.createIcons();
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        if (toast) toast.classList.add('hidden');
+      }, 4000);
+    }
+
+    function initStory3DEnvironment() {
+      if (!isDesktopViewport()) {
+        webgl3dFailed = true;
+        return;
+      }
+      const mount = document.getElementById('story-3d-canvas-mount');
+      if (!mount) return;
+      if (story3dRenderer) return;
+
+      try {
+        const width = mount.clientWidth || window.innerWidth;
+        const height = mount.clientHeight || window.innerHeight;
+
+        story3dScene = new THREE.Scene();
+        story3dScene.fog = new THREE.FogExp2(0x0a0908, 0.02);
+
+        story3dCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 50);
+        story3dCamera.position.set(0, 1.35, 2.3);
+
+        story3dRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+        story3dRenderer.setSize(width, height);
+        story3dRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        story3dRenderer.shadowMap.enabled = true;
+        story3dRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        mount.innerHTML = '';
+        mount.appendChild(story3dRenderer.domElement);
+
+        // DESKTOP ORBIT CONTROLS (MOUSE CLICK + DRAG TO EXPLORE)
+        story3dControls = new THREE.OrbitControls(story3dCamera, document.body);
+        story3dControls.enableDamping = true;
+        story3dControls.dampingFactor = 0.05;
+        story3dControls.target.set(0, 0.75, 0);
+        story3dControls.minDistance = 1.0;
+        story3dControls.maxDistance = 4.2;
+        story3dControls.minPolarAngle = 0.1;
+        story3dControls.maxPolarAngle = Math.PI / 2 - 0.05;
+        story3dControls.minAzimuthAngle = -Math.PI / 2.2;
+        story3dControls.maxAzimuthAngle = Math.PI / 2.2;
+
+        story3dControls.addEventListener('start', () => { isUserInteracting3D = true; });
+        story3dControls.addEventListener('end', () => { isUserInteracting3D = false; });
+
+        // LIGHTING
+        const ambLight = new THREE.AmbientLight(0x555566, 1.2);
+        ambLight.name = 'ambientLight';
+        story3dScene.add(ambLight);
+
+        const hemiLight = new THREE.HemisphereLight(0xffedd5, 0x18181b, 1.2);
+        story3dScene.add(hemiLight);
+
+        // MOONLIGHT RAY FROM WINDOW
+        const moonLight = new THREE.DirectionalLight(0x38bdf8, 1.2);
+        moonLight.position.set(4.0, 3.0, -1.0);
+        story3dScene.add(moonLight);
+
+        // FLOOR (Dark Concrete)
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(12, 12),
+          new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.8, metalness: 0.2 })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        story3dScene.add(floor);
+
+        // CEILING
+        const ceiling = new THREE.Mesh(
+          new THREE.PlaneGeometry(12, 12),
+          new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 })
+        );
+        ceiling.rotation.x = Math.PI / 2;
+        ceiling.position.y = 3.6;
+        story3dScene.add(ceiling);
+
+        // CONCRETE WALLS
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46, roughness: 0.6 });
+        const backWall = new THREE.Mesh(new THREE.PlaneGeometry(12, 4), wallMat);
+        backWall.position.set(0, 1.8, -3.5);
+        backWall.receiveShadow = true;
+        story3dScene.add(backWall);
+
+        const leftWall = new THREE.Mesh(new THREE.PlaneGeometry(12, 4), wallMat);
+        leftWall.rotation.y = Math.PI / 2;
+        leftWall.position.set(-4.5, 1.8, 0);
+        leftWall.receiveShadow = true;
+        story3dScene.add(leftWall);
+
+        const rightWall = new THREE.Mesh(new THREE.PlaneGeometry(12, 4), wallMat);
+        rightWall.rotation.y = -Math.PI / 2;
+        rightWall.position.set(4.5, 1.8, 0);
+        rightWall.receiveShadow = true;
+        story3dScene.add(rightWall);
+
+        // WINDOW WITH BLINDS (Right Wall)
+        const windowFrame = new THREE.Mesh(
+          new THREE.BoxGeometry(0.1, 1.6, 1.2),
+          new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.8 })
+        );
+        windowFrame.position.set(4.45, 2.0, -1.0);
+        story3dScene.add(windowFrame);
+
+        // METAL INTERROGATION TABLE
+        const metalMat = new THREE.MeshStandardMaterial({ color: 0x52525b, roughness: 0.2, metalness: 0.85 });
+        const tableTop = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 1.0), metalMat);
+        tableTop.position.set(0, 0.75, 0);
+        tableTop.castShadow = true;
+        tableTop.receiveShadow = true;
+        story3dScene.add(tableTop);
+
+        const legGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.71);
+        [[-0.8, 0.355, -0.4], [0.8, 0.355, -0.4], [-0.8, 0.355, 0.4], [0.8, 0.355, 0.4]].forEach(pos => {
+          const leg = new THREE.Mesh(legGeo, metalMat);
+          leg.position.set(...pos);
+          leg.castShadow = true;
+          story3dScene.add(leg);
+        });
+
+        // METAL CHAIRS (Suspect & Investigator)
+        [[-0.65, 0], [0.65, Math.PI]].forEach(([zPos, rotY]) => {
+          const chairGroup = new THREE.Group();
+          chairGroup.position.set(0, 0, zPos);
+          chairGroup.rotation.y = rotY;
+
+          const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.5), metalMat);
+          chairSeat.position.y = 0.45;
+          chairSeat.castShadow = true;
+          chairGroup.add(chairSeat);
+
+          const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.04), metalMat);
+          chairBack.position.set(0, 0.65, -0.23);
+          chairBack.castShadow = true;
+          chairGroup.add(chairBack);
+
+          [[-0.2, 0.215, -0.2], [0.2, 0.215, -0.2], [-0.2, 0.215, 0.2], [0.2, 0.215, 0.2]].forEach(pos => {
+            const cl = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.43), metalMat);
+            cl.position.set(...pos);
+            cl.castShadow = true;
+            chairGroup.add(cl);
+          });
+          story3dScene.add(chairGroup);
+        });
+
+        // MANILA FOLDER (Interactive Object)
+        const folderMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.5, metalness: 0.1 });
+        manilaFolderMesh = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.025, 0.28), folderMat);
+        manilaFolderMesh.position.set(0.25, 0.8, 0.08);
+        manilaFolderMesh.rotation.y = -0.15;
+        manilaFolderMesh.castShadow = true;
+        manilaFolderMesh.name = 'ManilaFolder';
+        story3dScene.add(manilaFolderMesh);
+
+        const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 0.12), new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide }));
+        labelMesh.rotation.x = -Math.PI / 2;
+        labelMesh.position.set(0.25, 0.814, 0.08);
+        story3dScene.add(labelMesh);
+
+        // SECRET DOCUMENTS (A4 sheets on table)
+        const docMat = new THREE.MeshStandardMaterial({ color: 0xf3f4f6, roughness: 0.9 });
+        const doc1 = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.31), docMat);
+        doc1.rotation.x = -Math.PI / 2;
+        doc1.rotation.z = 0.2;
+        doc1.position.set(-0.15, 0.792, -0.05);
+        story3dScene.add(doc1);
+
+        // VINTAGE ROTARY TELEPHONE / RADIO PROP
+        const phoneGroup = new THREE.Group();
+        phoneGroup.position.set(-0.6, 0.79, 0.1);
+        const phoneBase = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.18), metalMat);
+        phoneBase.position.y = 0.04;
+        phoneGroup.add(phoneBase);
+
+        const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.02, 16), new THREE.MeshStandardMaterial({ color: 0xd4d4d8 }));
+        dial.rotation.x = Math.PI / 4;
+        dial.position.set(0, 0.09, 0.03);
+        phoneGroup.add(dial);
+        story3dScene.add(phoneGroup);
+
+        // HEAVY METAL DOOR (Background Wall)
+        const doorGroup = new THREE.Group();
+        doorGroup.position.set(-2.5, 1.25, -3.45);
+
+        const doorFrame = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.45, 0.12), new THREE.MeshStandardMaterial({ color: 0x1e1e24, roughness: 0.9 }));
+        doorGroup.add(doorFrame);
+
+        interrogationDoor = new THREE.Mesh(new THREE.BoxGeometry(1.08, 2.35, 0.08), new THREE.MeshStandardMaterial({ color: 0x3f3f46, roughness: 0.5, metalness: 0.85 }));
+        interrogationDoor.position.set(0, 0, 0.02);
+        interrogationDoor.castShadow = true;
+        doorGroup.add(interrogationDoor);
+
+        doorLockHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.18), metalMat);
+        doorLockHandle.rotation.x = Math.PI / 2;
+        doorLockHandle.position.set(0.4, 0, 0.08);
+        doorGroup.add(doorLockHandle);
+
+        story3dScene.add(doorGroup);
+
+        // VINTAGE DESK LAMP (Warm Flickering Spotlight)
+        const lampGroup = new THREE.Group();
+        lampGroup.position.set(-0.45, 0.79, -0.15);
+
+        const lampMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.8 });
+        lampGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.04, 16), lampMat));
+
+        const stemMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.45), lampMat);
+        stemMesh.position.set(0.05, 0.22, 0.05);
+        stemMesh.rotation.z = -0.3;
+        lampGroup.add(stemMesh);
+
+        const shadeMesh = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.22, 16, 1, true), lampMat);
+        shadeMesh.position.set(0.18, 0.4, 0.1);
+        shadeMesh.rotation.z = -1.2;
+        lampGroup.add(shadeMesh);
+
+        deskLampBulb = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffeaad }));
+        deskLampBulb.position.set(0.22, 0.38, 0.1);
+        lampGroup.add(deskLampBulb);
+
+        story3dScene.add(lampGroup);
+
+        deskLampSpotlight = new THREE.SpotLight(0xffd185, 6.0, 10, Math.PI / 3.0, 0.5, 1.2);
+        deskLampSpotlight.position.set(-0.23, 1.25, -0.05);
+        deskLampSpotlight.target.position.set(0.1, 0.75, 0.05);
+        deskLampSpotlight.castShadow = true;
+        story3dScene.add(deskLampSpotlight);
+        story3dScene.add(deskLampSpotlight.target);
+
+        // RED SECURITY INDICATOR LIGHT
+        redSecurityMesh = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 16), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+        redSecurityMesh.position.set(1.6, 2.2, -3.46);
+        story3dScene.add(redSecurityMesh);
+
+        redSecurityLight = new THREE.PointLight(0xef4444, 2.5, 5);
+        redSecurityLight.position.set(1.6, 2.2, -3.4);
+        story3dScene.add(redSecurityLight);
+
+        // DUST PARTICLES
+        const particleCount = 120;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePos = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount * 3; i += 3) {
+          particlePos[i] = (Math.random() - 0.5) * 2.5;
+          particlePos[i + 1] = 0.75 + Math.random() * 1.5;
+          particlePos[i + 2] = (Math.random() - 0.5) * 2.5;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+        dustParticlesMesh = new THREE.Points(particleGeo, new THREE.PointsMaterial({ color: 0xffedd5, size: 0.02, transparent: true, opacity: 0.4 }));
+        story3dScene.add(dustParticlesMesh);
+
+        raycaster3D = new THREE.Raycaster();
+        mouseVector3D = new THREE.Vector2();
+
+        const canvasElem = story3dRenderer.domElement;
+        canvasElem.addEventListener('pointermove', onPointerMove3D);
+        canvasElem.addEventListener('pointerdown', onPointerDown3D);
+
+        // RENDER LOOP WITH IDLE FLOATING CAMERA ANIMATION
+        const clock = new THREE.Clock();
+        function animate3DLoop() {
+          requestAnimationFrame(animate3DLoop);
+          const time = clock.getElapsedTime();
+
+          // Subtle idle camera floating when not user dragging
+          if (!isUserInteracting3D && story3dCamera) {
+            story3dCamera.position.y += Math.sin(time * 0.8) * 0.0004;
+          }
+
+          if (deskLampSpotlight && storyRoomState !== 'blackout') {
+            const flicker = Math.sin(time * 12) * 0.25 + (Math.random() - 0.5) * 0.15;
+            if (storyRoomState === 'pathB') {
+              deskLampSpotlight.intensity = Math.max(0.5, 5.0 + flicker * 2.0);
+            } else {
+              deskLampSpotlight.intensity = Math.max(2.0, 6.0 + flicker);
+            }
+          }
+
+          if (redSecurityLight) {
+            if (storyRoomState === 'pathB') {
+              redSecurityLight.color.setHex(0xef4444);
+              redSecurityLight.intensity = 3.0 + Math.sin(time * 14) * 2.0;
+            } else if (storyRoomState === 'pathA') {
+              redSecurityLight.color.setHex(0x38bdf8);
+              redSecurityLight.intensity = 2.0 + Math.sin(time * 4) * 0.8;
+            } else {
+              redSecurityLight.color.setHex(0xef4444);
+              redSecurityLight.intensity = 2.5 + Math.sin(time * 3) * 0.9;
+            }
+          }
+
+          if (dustParticlesMesh) {
+            const positions = dustParticlesMesh.geometry.attributes.position.array;
+            for (let i = 1; i < particleCount * 3; i += 3) {
+              positions[i] -= 0.0008;
+              if (positions[i] < 0.75) positions[i] = 2.2;
+            }
+            dustParticlesMesh.geometry.attributes.position.needsUpdate = true;
+          }
+
+          if (story3dControls) story3dControls.update();
+          story3dRenderer.render(story3dScene, story3dCamera);
+        }
+        animate3DLoop();
+
+        window.addEventListener('resize', onResizeStory3D);
+
+      } catch (err) {
+        console.warn('WebGL 3D Interrogation Room failed to init:', err);
+        webgl3dFailed = true;
+      }
+    }
+
+    function onResizeStory3D() {
+      const mount = document.getElementById('story-3d-canvas-mount');
+      if (!mount || !story3dRenderer || !story3dCamera) return;
+      const w = mount.clientWidth || window.innerWidth;
+      const h = mount.clientHeight || window.innerHeight;
+      story3dCamera.aspect = w / h;
+      story3dCamera.updateProjectionMatrix();
+      story3dRenderer.setSize(w, h);
+    }
+
+    function onPointerMove3D(event) {
+      if (!story3dCamera || !story3dScene || !story3dRenderer) return;
+      const rect = story3dRenderer.domElement.getBoundingClientRect();
+      mouseVector3D.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseVector3D.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster3D.setFromCamera(mouseVector3D, story3dCamera);
+      const intersects = raycaster3D.intersectObjects([manilaFolderMesh], true);
+      const tooltip = document.getElementById('folder-tooltip');
+
+      if (intersects.length > 0) {
+        document.body.style.cursor = 'pointer';
+        if (tooltip) tooltip.classList.remove('hidden');
+        if (manilaFolderMesh) manilaFolderMesh.material.emissive.setHex(0x443311);
+      } else {
+        document.body.style.cursor = 'default';
+        if (tooltip) tooltip.classList.add('hidden');
+        if (manilaFolderMesh) manilaFolderMesh.material.emissive.setHex(0x000000);
+      }
+    }
+
+    function onPointerDown3D() {
+      if (!story3dCamera || !story3dScene) return;
+      raycaster3D.setFromCamera(mouseVector3D, story3dCamera);
+      const intersects = raycaster3D.intersectObjects([manilaFolderMesh], true);
+      if (intersects.length > 0 && manilaFolderMesh) {
+        manilaFolderMesh.position.y = 0.85;
+        manilaFolderMesh.rotation.z = -0.2;
+        setTimeout(() => {
+          if (manilaFolderMesh) {
+            manilaFolderMesh.position.y = 0.8;
+            manilaFolderMesh.rotation.z = 0;
+          }
+        }, 1200);
+      }
+    }
+
+    function setStory3DSceneState(state) {
+      storyRoomState = state;
+      if (!story3dScene) return;
+
+      const amb = story3dScene.getObjectByName('ambientLight');
+
+      if (state === 'screen1') {
+        if (amb) amb.color.setHex(0x27272a);
+        if (deskLampSpotlight) {
+          deskLampSpotlight.color.setHex(0xffd185);
+          deskLampSpotlight.intensity = 4.5;
+        }
+      } else if (state === 'pathA') {
+        if (amb) amb.color.setHex(0x0f172a);
+        if (deskLampSpotlight) {
+          deskLampSpotlight.color.setHex(0x93c5fd);
+          deskLampSpotlight.intensity = 3.0;
+        }
+        setTimeout(() => {
+          if (doorLockHandle) doorLockHandle.rotation.z = -Math.PI / 3;
+          if (interrogationDoor) interrogationDoor.position.x = 0.06;
+        }, 1000);
+      } else if (state === 'pathB') {
+        if (amb) amb.color.setHex(0x450a0a);
+        if (deskLampSpotlight) {
+          deskLampSpotlight.color.setHex(0xf87171);
+        }
+        setTimeout(() => {
+          if (deskLampSpotlight) deskLampSpotlight.intensity = 0;
+          setTimeout(() => {
+            if (deskLampSpotlight) deskLampSpotlight.intensity = 5.0;
+            setTimeout(() => {
+              if (deskLampSpotlight) deskLampSpotlight.intensity = 0.2;
+              setTimeout(() => {
+                if (deskLampSpotlight) deskLampSpotlight.intensity = 4.0;
+              }, 150);
+            }, 150);
+          }, 200);
+        }, 1500);
+      }
+    }
+
+    function checkWebXRSupport() {
+      const xrBar = document.getElementById('webxr-vr-bar');
+      const vrBtn = document.getElementById('btn-enter-webxr-vr');
+      const vrLabel = document.getElementById('vr-btn-label');
+      if (!xrBar || !vrBtn || !vrLabel) return;
+
+      xrBar.classList.remove('hidden');
+
+      if (navigator.xr && navigator.xr.isSessionSupported) {
+        navigator.xr.isSessionSupported('immersive-vr').then(supported => {
+          if (supported) {
+            vrLabel.textContent = 'ENTER VR (WebXR)';
+            vrBtn.classList.add('animate-pulse');
+          } else {
+            vrLabel.textContent = '🎮 3D Desktop Mode Active';
+            vrBtn.classList.remove('animate-pulse');
+          }
+        }).catch(() => {
+          vrLabel.textContent = '🎮 3D Desktop Mode Active';
+          vrBtn.classList.remove('animate-pulse');
+        });
+      } else {
+        vrLabel.textContent = '🎮 3D Desktop Mode Active';
+        vrBtn.classList.remove('animate-pulse');
+      }
+    }
+
+    function enterWebXRSession() {
+      if (!story3dRenderer || !navigator.xr) {
+        showToastNotification('🎮 3D Desktop Navigation Active! Drag mouse or touch to inspect the 1982 Lahore Interrogation Room.');
+        return;
+      }
+
+      navigator.xr.requestSession('immersive-vr', {
+        optionalFeatures: ['local-floor', 'bounded-floor']
+      }).then(session => {
+        xrSessionActive = session;
+        story3dRenderer.xr.setSession(session);
+        const vrLabel = document.getElementById('vr-btn-label');
+        if (vrLabel) vrLabel.textContent = 'EXIT VR';
+
+        session.addEventListener('end', () => {
+          xrSessionActive = null;
+          if (vrLabel) vrLabel.textContent = 'ENTER VR (WebXR)';
+        });
+      }).catch(err => {
+        console.log('WebXR session request:', err);
+        showToastNotification('🎮 3D Desktop Mode Active! Mouse drag / touch is enabled to explore the 1982 Lahore Interrogation Room. (Connect a VR headset for WebXR VR mode)');
+      });
+    }
+
+    // DISPLAY FULLSCREEN REAL-TIME 3D WEBXR INTERROGATION ROOM BACKDROP
     function showVRPanorama() {
       document.getElementById('default-bg').classList.add('hidden');
-      const vrBg = document.getElementById('vr-story-bg');
-      vrBg.classList.remove('hidden');
-      const video = document.getElementById('interactive-bg-video');
-      if (video) {
-        video.play().catch(() => {});
+      const story3d = document.getElementById('story-3d-canvas-container');
+
+      if (isDesktopViewport() && story3d && !webgl3dFailed) {
+        story3d.classList.remove('hidden');
+        initStory3DEnvironment();
+        checkWebXRSupport();
+      } else {
+        // Fallback to MP4 video / 2D background on mobile / tablet (<1024px)
+        const vrBg = document.getElementById('vr-story-bg');
+        if (vrBg) vrBg.classList.remove('hidden');
+        const video = document.getElementById('interactive-bg-video');
+        if (video) video.play().catch(() => {});
       }
     }
 
     function hideVRPanorama() {
+      const story3d = document.getElementById('story-3d-canvas-container');
+      if (story3d) story3d.classList.add('hidden');
+
       const vrBg = document.getElementById('vr-story-bg');
-      vrBg.classList.add('hidden');
+      if (vrBg) vrBg.classList.add('hidden');
+
       const video = document.getElementById('interactive-bg-video');
-      if (video) {
-        video.pause();
-      }
+      if (video) video.pause();
+
+      const xrBar = document.getElementById('webxr-vr-bar');
+      if (xrBar) xrBar.classList.add('hidden');
+
       document.getElementById('default-bg').classList.remove('hidden');
     }
 
@@ -776,7 +1348,8 @@
 
     // DYNAMIC SCRIPTED NARRATIVE FLOW OVER HIGH-RES INTERROGATION ROOM BACKDROP
     function renderVisualTextScreen(screenName) {
-      showVRPanorama(); // Always display full high-res Interrogation Room background!
+      showVRPanorama(); // Always display full 3D WebXR Interrogation Room background!
+      setStory3DSceneState(screenName);
 
       const detailView = document.getElementById('view-experience-detail');
       const contentContainer = document.getElementById('detail-dynamic-content');
@@ -786,7 +1359,7 @@
 
       if (screenName === 'screen1') {
         contentContainer.innerHTML = `
-          <div class="p-8 rounded-3xl bg-stone-950/90 backdrop-blur-xl text-stone-100 shadow-2xl border border-stone-700 max-w-3xl mx-auto my-auto border-l-4 border-l-red-600">
+          <div class="p-8 rounded-3xl bg-stone-950/90 backdrop-blur-xl text-stone-100 shadow-2xl border border-stone-700 max-w-3xl mx-auto my-auto border-l-4 border-l-red-600 pointer-events-auto">
             
             <div class="flex items-center justify-between border-b border-stone-700/60 pb-3 mb-6">
               <div class="flex items-center space-x-2">
@@ -818,7 +1391,7 @@
         `;
       } else if (screenName === 'pathA') {
         contentContainer.innerHTML = `
-          <div class="p-8 rounded-3xl bg-[#0f172a]/95 backdrop-blur-xl text-slate-100 shadow-2xl border border-blue-600/50 max-w-3xl mx-auto border-l-4 border-l-blue-400">
+          <div class="p-8 rounded-3xl bg-[#0f172a]/95 backdrop-blur-xl text-slate-100 shadow-2xl border border-blue-600/50 max-w-3xl mx-auto border-l-4 border-l-blue-400 pointer-events-auto">
             
             <div class="flex items-center justify-between border-b border-blue-800/40 pb-3 mb-6">
               <div class="flex items-center space-x-2">
@@ -845,7 +1418,7 @@
         `;
       } else if (screenName === 'pathB') {
         contentContainer.innerHTML = `
-          <div class="p-8 rounded-3xl bg-[#24170e]/95 backdrop-blur-xl text-amber-100 shadow-2xl border border-amber-600/50 max-w-3xl mx-auto border-l-4 border-l-amber-500">
+          <div class="p-8 rounded-3xl bg-[#24170e]/95 backdrop-blur-xl text-amber-100 shadow-2xl border border-amber-600/50 max-w-3xl mx-auto border-l-4 border-l-amber-500 pointer-events-auto">
             
             <div class="flex items-center justify-between border-b border-amber-800/40 pb-3 mb-6">
               <div class="flex items-center space-x-2">
@@ -872,7 +1445,7 @@
         `;
       } else if (screenName === 'screen3') {
         contentContainer.innerHTML = `
-          <div class="p-8 rounded-3xl bg-stone-950/95 backdrop-blur-xl text-stone-100 shadow-2xl border border-red-700/60 text-center max-w-3xl mx-auto">
+          <div class="p-8 rounded-3xl bg-stone-950/95 backdrop-blur-xl text-stone-100 shadow-2xl border border-red-700/60 text-center max-w-3xl mx-auto pointer-events-auto">
             
             <span class="text-xs font-mono text-red-500 uppercase tracking-widest font-bold block mb-2">THE FILE IS SEALED</span>
             <h2 class="font-cinzel text-3xl font-extrabold text-red-600 mb-4 glow-gold">History is rewritten by those who survive.</h2>
