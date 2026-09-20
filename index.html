@@ -573,9 +573,13 @@
                 <span>Back to Options</span>
               </button>
 
-              <div id="desktop-3d-info-bar" class="flex items-center space-x-2 glass-button px-4 py-2 rounded-xl text-xs font-mono font-semibold text-amber-300 border border-amber-400/40 shadow-2xl">
-                <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-amber-400"></i>
-                <span>🖱️ DRAG TO EXPLORE • 1982 LAHORE</span>
+              <div id="desktop-3d-info-bar" class="flex items-center space-x-3 glass-button px-4 py-2 rounded-xl text-xs font-mono font-semibold text-amber-300 border border-amber-400/40 shadow-2xl">
+                <div class="flex items-center space-x-1.5">
+                  <i data-lucide="compass" class="w-3.5 h-3.5 text-amber-400"></i>
+                  <span>🖱 DRAG TO EXPLORE · 1982 LAHORE</span>
+                </div>
+                <span class="text-amber-500/40">|</span>
+                <span class="text-amber-400/80 font-bold">SCENE 01 / 06</span>
               </div>
             </div>
             <div id="detail-dynamic-content" class="pointer-events-none"></div>
@@ -763,6 +767,8 @@
     let radioMeshGroup = null;
     let newspaperMesh = null;
     let wallMapMesh = null;
+    let typewriterGroup = null;
+    let calendarMesh = null;
     let dustParticlesMesh = null;
     let raycaster3D = null;
     let mouseVector3D = null;
@@ -794,20 +800,44 @@
 
     let subtitleTimerTimeout = null;
 
-    function showCinematicSubtitle(text, durationMs = 5500) {
+    function resetCameraToRoom() {
+      targetCameraPos.set(0, 1.35, 2.3);
+      targetCameraLookAt.set(0, 0.75, 0);
+      isCameraAnimating = true;
+      const sub = document.getElementById('cinematic-subtitles');
+      if (sub) {
+        sub.style.opacity = '0';
+        setTimeout(() => sub.classList.add('hidden'), 300);
+      }
+    }
+
+    function showCinematicSubtitle(text, durationMs = 5500, withContinue = false) {
       const sub = document.getElementById('cinematic-subtitles');
       if (!sub) return;
-      sub.innerHTML = `<span>"${text}"</span>`;
+
+      let html = `<div>"${text}"</div>`;
+      if (withContinue) {
+        html += `<button onclick="resetCameraToRoom()" class="mt-2.5 px-4 py-1.5 rounded-full bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/50 text-xs font-mono font-bold text-amber-200 transition-all pointer-events-auto inline-flex items-center space-x-1.5 shadow-lg"><span>↩ Continue Exploration</span></button>`;
+        sub.classList.add('pointer-events-auto');
+        sub.classList.remove('pointer-events-none');
+      } else {
+        sub.classList.add('pointer-events-none');
+        sub.classList.remove('pointer-events-auto');
+      }
+
+      sub.innerHTML = html;
       sub.classList.remove('hidden');
       sub.style.opacity = '1';
 
       if (subtitleTimerTimeout) clearTimeout(subtitleTimerTimeout);
-      subtitleTimerTimeout = setTimeout(() => {
-        sub.style.opacity = '0';
-        setTimeout(() => {
-          sub.classList.add('hidden');
-        }, 500);
-      }, durationMs);
+      if (!withContinue && durationMs > 0) {
+        subtitleTimerTimeout = setTimeout(() => {
+          sub.style.opacity = '0';
+          setTimeout(() => {
+            sub.classList.add('hidden');
+          }, 500);
+        }, durationMs);
+      }
     }
 
     function initStory3DEnvironment() {
@@ -998,6 +1028,36 @@
         wallMapMesh.name = 'wallMap';
         story3dScene.add(wallMapMesh);
 
+        // VINTAGE 1982 TYPEWRITER (On Desk)
+        typewriterGroup = new THREE.Group();
+        typewriterGroup.position.set(0.48, 0.79, -0.15);
+        typewriterGroup.name = 'typewriter';
+
+        const typeBase = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.22), metalMat);
+        typeBase.position.y = 0.04;
+        typeBase.name = 'typewriter';
+        typewriterGroup.add(typeBase);
+
+        const typeRoller = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.26), new THREE.MeshStandardMaterial({ color: 0x18181b }));
+        typeRoller.rotation.z = Math.PI / 2;
+        typeRoller.position.set(0, 0.1, -0.04);
+        typeRoller.name = 'typewriter';
+        typewriterGroup.add(typeRoller);
+
+        const typePaper = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.22), docMat);
+        typePaper.rotation.x = -Math.PI / 3;
+        typePaper.position.set(0, 0.14, -0.06);
+        typePaper.name = 'typewriter';
+        typewriterGroup.add(typePaper);
+        story3dScene.add(typewriterGroup);
+
+        // 1982 SECURITY BUREAU CALENDAR (Back Wall)
+        const calMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.9 });
+        calendarMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.65), calMat);
+        calendarMesh.position.set(-1.4, 2.3, -3.48);
+        calendarMesh.name = 'calendar';
+        story3dScene.add(calendarMesh);
+
         // HEAVY METAL DOOR (Background Wall)
         const doorGroup = new THREE.Group();
         doorGroup.position.set(-2.5, 1.25, -3.45);
@@ -1163,6 +1223,8 @@
       if (newspaperMesh) interactiveList.push(newspaperMesh);
       if (radioMeshGroup) interactiveList.push(radioMeshGroup);
       if (wallMapMesh) interactiveList.push(wallMapMesh);
+      if (typewriterGroup) interactiveList.push(typewriterGroup);
+      if (calendarMesh) interactiveList.push(calendarMesh);
 
       const intersects = raycaster3D.intersectObjects(interactiveList, true);
       const tooltip = document.getElementById('folder-tooltip');
@@ -1180,17 +1242,23 @@
           const subtitle = tooltip.querySelector('.prop-label-sub');
 
           if (propName === 'manilaFolder') {
-            if (title) title.textContent = '◉ MANILA FOLDER';
-            if (subtitle) subtitle.textContent = 'Click to investigate classified rebel files';
+            if (title) title.textContent = '◉ CLASSIFIED FILE';
+            if (subtitle) subtitle.textContent = 'Click to investigate rebel file dossiers';
           } else if (propName === 'radio') {
-            if (title) title.textContent = '◉ VINTAGE RADIO';
+            if (title) title.textContent = '◉ SECURITY RADIO';
             if (subtitle) subtitle.textContent = 'Click to listen to underground frequency';
           } else if (propName === 'newspaper') {
-            if (title) title.textContent = '◉ PRESS DISPATCH';
+            if (title) title.textContent = '◉ NEWSPAPER DISPATCH';
             if (subtitle) subtitle.textContent = 'Click to read secret Gazette headlines';
           } else if (propName === 'wallMap') {
-            if (title) title.textContent = '◉ 1982 POLITICAL MAP';
-            if (subtitle) subtitle.textContent = 'Click to examine territories of Undivided India';
+            if (title) title.textContent = '◉ MAP OF UNDIVIDED INDIA';
+            if (subtitle) subtitle.textContent = 'Click to examine 1982 territories';
+          } else if (propName === 'typewriter') {
+            if (title) title.textContent = '◉ VINTAGE TYPEWRITER';
+            if (subtitle) subtitle.textContent = 'Click to inspect un-typed rebel manifesto';
+          } else if (propName === 'calendar') {
+            if (title) title.textContent = '◉ 1982 BUREAU CALENDAR';
+            if (subtitle) subtitle.textContent = 'Click to inspect state security decree date';
           }
         }
       } else {
@@ -1217,22 +1285,32 @@
         targetCameraPos.set(0.15, 1.1, 0.5);
         targetCameraLookAt.set(0.25, 0.8, 0.08);
         isCameraAnimating = true;
-        showCinematicSubtitle('📁 Classified File #482: 14 underground rebel printing presses identified across Calcutta and Lahore.');
+        showCinematicSubtitle('📁 Classified File #482 — Subject: Mrityunjay. 14 underground rebel printing presses identified across Calcutta and Lahore.', 0, true);
       } else if (activeHoveredProp === 'radio') {
         targetCameraPos.set(-0.4, 1.0, 0.5);
         targetCameraLookAt.set(-0.6, 0.79, 0.1);
         isCameraAnimating = true;
-        showCinematicSubtitle('📻 Radio Calcutta crackles: "Do not burn the manifesto tonight. Let them read it..."');
+        showCinematicSubtitle('📻 Radio Calcutta crackles over jammer frequencies: "Do not burn the manifesto tonight. Let them read it..."', 0, true);
       } else if (activeHoveredProp === 'newspaper') {
         targetCameraPos.set(-0.05, 1.05, 0.45);
         targetCameraLookAt.set(-0.15, 0.79, -0.05);
         isCameraAnimating = true;
-        showCinematicSubtitle('📰 Gazette Headline: "STATE SECURITY BUREAU SEALS ALL INDEPENDENT PRINTING PRESSES".');
+        showCinematicSubtitle('📰 Gazette Headline: "STATE SECURITY BUREAU SEALS ALL INDEPENDENT PRINTING PRESSES IN LAHORE AND CALCUTTA".', 0, true);
       } else if (activeHoveredProp === 'wallMap') {
         targetCameraPos.set(0.8, 1.8, -2.0);
         targetCameraLookAt.set(1.5, 2.1, -3.48);
         isCameraAnimating = true;
-        showCinematicSubtitle('🗺️ 1982 Map: Security forces closing perimeters around eastern rebel strongholds.');
+        showCinematicSubtitle('🗺️ 1982 Map of Undivided India: Security forces closing perimeters around eastern rebel strongholds.', 0, true);
+      } else if (activeHoveredProp === 'typewriter') {
+        targetCameraPos.set(0.35, 1.05, 0.4);
+        targetCameraLookAt.set(0.48, 0.79, -0.15);
+        isCameraAnimating = true;
+        showCinematicSubtitle('⌨️ Typewriter Sheet: "CHAPTER 1: THE MISSING NATION — Truth is the only fire they cannot put out."', 0, true);
+      } else if (activeHoveredProp === 'calendar') {
+        targetCameraPos.set(-0.8, 2.0, -2.0);
+        targetCameraLookAt.set(-1.4, 2.3, -3.48);
+        isCameraAnimating = true;
+        showCinematicSubtitle('📅 October 1982: State Security Bureau Decree #4 in effect across West and East Pakistan.', 0, true);
       }
     }
 
@@ -1347,15 +1425,50 @@
       }
     }
 
+    function stopAllMediaAndAudio() {
+      // 1. Cancel Speech Synthesis narration
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      isAudioPlaying = false;
+      if (audioTimerInterval) {
+        clearInterval(audioTimerInterval);
+        audioTimerInterval = null;
+      }
+      audioSeconds = 0;
+
+      // 2. Pause and reset all video elements
+      document.querySelectorAll('video').forEach(v => {
+        try {
+          v.pause();
+          v.currentTime = 0;
+        } catch (e) {}
+      });
+
+      // 3. Pause all audio elements
+      document.querySelectorAll('audio').forEach(a => {
+        try {
+          a.pause();
+          a.currentTime = 0;
+        } catch (e) {}
+      });
+
+      // 4. Hide subtitle bar
+      const sub = document.getElementById('cinematic-subtitles');
+      if (sub) {
+        sub.style.opacity = '0';
+        sub.classList.add('hidden');
+      }
+    }
+
     function hideVRPanorama() {
+      stopAllMediaAndAudio();
+
       const story3d = document.getElementById('story-3d-canvas-container');
       if (story3d) story3d.classList.add('hidden');
 
       const vrBg = document.getElementById('vr-story-bg');
       if (vrBg) vrBg.classList.add('hidden');
-
-      const video = document.getElementById('interactive-bg-video');
-      if (video) video.pause();
 
       const xrBar = document.getElementById('webxr-vr-bar');
       if (xrBar) xrBar.classList.add('hidden');
@@ -1429,6 +1542,7 @@
     }
 
     function goToHome() {
+      stopAllMediaAndAudio();
       if (coverPivot) coverPivot.rotation.y = 0;
 
       hideVRPanorama();
@@ -1594,7 +1708,7 @@
       detailView.classList.remove('hidden');
 
       contentContainer.innerHTML = `
-        <div class="parchment-page p-8 rounded-3xl max-w-3xl mx-auto shadow-2xl border border-amber-600">
+        <div class="parchment-page p-8 rounded-3xl max-w-3xl mx-auto shadow-2xl border border-amber-600 pointer-events-auto">
           <div class="flex items-center justify-between border-b border-amber-900/20 pb-4 mb-6">
             <div class="flex items-center space-x-3">
               <div class="w-10 h-10 rounded-xl bg-amber-900 text-amber-100 flex items-center justify-center">
@@ -1610,7 +1724,7 @@
 
           <!-- AUDIO NARRATION CONTROLS AND TEXT READING PAGE -->
           <div class="bg-amber-950/10 p-4 rounded-2xl border border-amber-900/20 mb-6 flex items-center space-x-4">
-            <button onclick="toggleAudioNarration(this)" class="w-12 h-12 rounded-full bg-amber-800 hover:bg-amber-900 text-amber-100 flex items-center justify-center shadow-lg transition-transform hover:scale-105 flex-shrink-0">
+            <button id="audio-play-btn" onclick="toggleAudioNarration(this)" class="w-12 h-12 rounded-full bg-amber-800 hover:bg-amber-900 text-amber-100 flex items-center justify-center shadow-lg transition-transform hover:scale-105 flex-shrink-0 cursor-pointer pointer-events-auto">
               <i data-lucide="play" class="w-6 h-6 fill-amber-100 ml-1"></i>
             </button>
             <div class="flex-1">
@@ -1624,7 +1738,7 @@
             </div>
           </div>
 
-          <div class="font-serif-vintage text-stone-900 text-base md:text-lg leading-relaxed space-y-4 max-h-[350px] overflow-y-auto pr-2">
+          <div id="audiobook-full-text" class="font-serif-vintage text-stone-900 text-base md:text-lg leading-relaxed space-y-4 max-h-[350px] overflow-y-auto pr-2">
             <p class="first-letter:text-4xl first-letter:font-cinzel first-letter:font-bold first-letter:text-amber-900 first-letter:mr-2 first-letter:float-left">
               The ink on the morning gazette was still damp when the armored transport turned onto Harrison Road. It was October 1982, but in Lahore and Calcutta, time felt frozen under the weight of the Security Bureau’s decree.
             </p>
@@ -1646,7 +1760,6 @@
     let audioSeconds = 0;
 
     function toggleAudioNarration(btn) {
-      const icon = btn.querySelector('i');
       const progressBar = document.getElementById('audio-progress-bar');
       const timerLabel = document.getElementById('audio-timer');
 
@@ -1654,10 +1767,22 @@
         isAudioPlaying = true;
         btn.innerHTML = `<i data-lucide="pause" class="w-6 h-6 fill-amber-100"></i>`;
         
-        // Browser Speech Synthesis for audio narration text
+        // Dynamic Speech Synthesis reading out all text paragraphs on screen
         if ('speechSynthesis' in window) {
-          const utterance = new SpeechSynthesisUtterance("The ink on the morning gazette was still damp when the armored transport turned onto Harrison Road. It was October 1982, but in Lahore and Calcutta, time felt frozen under the weight of the Security Bureau's decree.");
-          utterance.rate = 0.95;
+          window.speechSynthesis.cancel();
+          const textElem = document.getElementById('audiobook-full-text');
+          const textToRead = textElem ? textElem.innerText : "The Raid at Calcutta. Chapter 1. The ink on the morning gazette was still damp when the armored transport turned onto Harrison Road. It was October 1982, but in Lahore and Calcutta, time felt frozen under the weight of the Security Bureau's decree. Inside the basement of the underground press, Mrityunjay adjusted his round spectacles, blowing dust off the hand-cranked printing plate. The manifesto was titled The Missing Nation—a single chapter that proved the borders drawn sixty years ago were built on a silent lie. If they break these doors tonight, Mrityunjay whispered to the young apprentice, do not burn the paper. Let them read it. Truth is the only fire they cannot put out.";
+
+          const utterance = new SpeechSynthesisUtterance(textToRead);
+          utterance.rate = 0.92;
+          
+          utterance.onend = function() {
+            isAudioPlaying = false;
+            if (btn) btn.innerHTML = `<i data-lucide="play" class="w-6 h-6 fill-amber-100 ml-1"></i>`;
+            clearInterval(audioTimerInterval);
+            lucide.createIcons();
+          };
+
           window.speechSynthesis.speak(utterance);
         }
 
@@ -1705,6 +1830,7 @@
     }
 
     function selectExperience(type) {
+      stopAllMediaAndAudio();
       if (type === 'audiobook') {
         renderAudioBookPlayer();
       } else if (type === 'visualtexts') {
@@ -1717,9 +1843,12 @@
     }
 
     function showOverviewCards() {
+      stopAllMediaAndAudio();
       hideVRPanorama();
       document.getElementById('view-experience-detail').classList.add('hidden');
       document.getElementById('view-cards-overview').classList.remove('hidden');
+      const detailContent = document.getElementById('detail-dynamic-content');
+      if (detailContent) detailContent.innerHTML = '';
     }
 
     // ORBIT CONTROLS FOR DESK BOOK
