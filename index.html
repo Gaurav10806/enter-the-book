@@ -115,10 +115,14 @@
     <div id="story-3d-canvas-mount" class="w-full h-full"></div>
     <!-- Subtle Vignette Overlay for High Visibility and Crisp Text Readability -->
     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/60 pointer-events-none"></div>
-    <!-- Interactive Hover Tooltip for 3D Manila Folder -->
-    <div id="folder-tooltip" class="absolute bottom-10 left-1/2 -translate-x-1/2 hidden glass-panel px-6 py-3 rounded-2xl border border-amber-400/60 shadow-2xl text-center pointer-events-none transition-all duration-300 z-30">
-      <span class="text-xs font-mono text-amber-300 font-bold uppercase tracking-widest block">📁 CLASSIFIED — LAHORE SECURITY BUREAU</span>
-      <span class="text-[11px] text-stone-300">Click Manila Folder on table to inspect secret files</span>
+    <!-- Contextual Hover Tooltip for 3D Story Objects -->
+    <div id="folder-tooltip" class="absolute bottom-28 left-1/2 -translate-x-1/2 hidden glass-panel px-6 py-3 rounded-2xl border border-amber-400/60 shadow-2xl text-center pointer-events-none transition-all duration-300 z-30">
+      <span class="prop-label-title text-xs font-mono text-amber-300 font-bold uppercase tracking-widest block">📁 CLASSIFIED — LAHORE SECURITY BUREAU</span>
+      <span class="prop-label-sub text-[11px] text-stone-300">Click object on table to inspect</span>
+    </div>
+    
+    <!-- Cinematic Single-Line Bottom Subtitles Bar -->
+    <div id="cinematic-subtitles" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 hidden max-w-2xl w-[90%] glass-panel px-8 py-4 rounded-2xl border border-amber-500/40 text-amber-100 text-center shadow-2xl transition-all duration-500 font-serif-vintage text-base md:text-lg italic pointer-events-none">
     </div>
   </div>
 
@@ -135,7 +139,7 @@
   </div>
 
   <!-- ROLE ACCESS SWITCHER MODAL (NO PASSWORD REQUIRED) -->
-  <div id="role-select-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+  <div id="role-select-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 pointer-events-auto">
     <div class="glass-panel p-8 rounded-3xl max-w-lg w-full border border-amber-500/50 shadow-2xl text-center space-y-6">
       <div>
         <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 mx-auto mb-3">
@@ -756,6 +760,9 @@
     let interrogationDoor = null;
     let doorLockHandle = null;
     let manilaFolderMesh = null;
+    let radioMeshGroup = null;
+    let newspaperMesh = null;
+    let wallMapMesh = null;
     let dustParticlesMesh = null;
     let raycaster3D = null;
     let mouseVector3D = null;
@@ -763,6 +770,11 @@
     let xrSessionActive = null;
     let webgl3dFailed = false;
     let isUserInteracting3D = false;
+
+    let targetCameraPos = new THREE.Vector3(0, 1.35, 2.3);
+    let targetCameraLookAt = new THREE.Vector3(0, 0.75, 0);
+    let isCameraAnimating = false;
+    let activeHoveredProp = null;
 
     function showToastNotification(text) {
       let toast = document.getElementById('app-toast-notif');
@@ -778,6 +790,24 @@
       setTimeout(() => {
         if (toast) toast.classList.add('hidden');
       }, 4000);
+    }
+
+    let subtitleTimerTimeout = null;
+
+    function showCinematicSubtitle(text, durationMs = 5500) {
+      const sub = document.getElementById('cinematic-subtitles');
+      if (!sub) return;
+      sub.innerHTML = `<span>"${text}"</span>`;
+      sub.classList.remove('hidden');
+      sub.style.opacity = '1';
+
+      if (subtitleTimerTimeout) clearTimeout(subtitleTimerTimeout);
+      subtitleTimerTimeout = setTimeout(() => {
+        sub.style.opacity = '0';
+        setTimeout(() => {
+          sub.classList.add('hidden');
+        }, 500);
+      }, durationMs);
     }
 
     function initStory3DEnvironment() {
@@ -809,7 +839,7 @@
         mount.appendChild(story3dRenderer.domElement);
 
         // DESKTOP ORBIT CONTROLS (MOUSE CLICK + DRAG TO EXPLORE)
-        story3dControls = new THREE.OrbitControls(story3dCamera, document.body);
+        story3dControls = new THREE.OrbitControls(story3dCamera, story3dRenderer.domElement);
         story3dControls.enableDamping = true;
         story3dControls.dampingFactor = 0.05;
         story3dControls.target.set(0, 0.75, 0);
@@ -928,7 +958,7 @@
         manilaFolderMesh.position.set(0.25, 0.8, 0.08);
         manilaFolderMesh.rotation.y = -0.15;
         manilaFolderMesh.castShadow = true;
-        manilaFolderMesh.name = 'ManilaFolder';
+        manilaFolderMesh.name = 'manilaFolder';
         story3dScene.add(manilaFolderMesh);
 
         const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 0.12), new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide }));
@@ -936,26 +966,37 @@
         labelMesh.position.set(0.25, 0.814, 0.08);
         story3dScene.add(labelMesh);
 
-        // SECRET DOCUMENTS (A4 sheets on table)
+        // SECRET DOCUMENTS / NEWSPAPER (A4 sheets on table)
         const docMat = new THREE.MeshStandardMaterial({ color: 0xf3f4f6, roughness: 0.9 });
-        const doc1 = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.31), docMat);
-        doc1.rotation.x = -Math.PI / 2;
-        doc1.rotation.z = 0.2;
-        doc1.position.set(-0.15, 0.792, -0.05);
-        story3dScene.add(doc1);
+        newspaperMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.31), docMat);
+        newspaperMesh.rotation.x = -Math.PI / 2;
+        newspaperMesh.rotation.z = 0.2;
+        newspaperMesh.position.set(-0.15, 0.792, -0.05);
+        newspaperMesh.name = 'newspaper';
+        story3dScene.add(newspaperMesh);
 
-        // VINTAGE ROTARY TELEPHONE / RADIO PROP
-        const phoneGroup = new THREE.Group();
-        phoneGroup.position.set(-0.6, 0.79, 0.1);
+        // VINTAGE RADIO / TELEPHONE PROP
+        radioMeshGroup = new THREE.Group();
+        radioMeshGroup.position.set(-0.6, 0.79, 0.1);
+        radioMeshGroup.name = 'radio';
         const phoneBase = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.18), metalMat);
         phoneBase.position.y = 0.04;
-        phoneGroup.add(phoneBase);
+        phoneBase.name = 'radio';
+        radioMeshGroup.add(phoneBase);
 
         const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.02, 16), new THREE.MeshStandardMaterial({ color: 0xd4d4d8 }));
         dial.rotation.x = Math.PI / 4;
         dial.position.set(0, 0.09, 0.03);
-        phoneGroup.add(dial);
-        story3dScene.add(phoneGroup);
+        dial.name = 'radio';
+        radioMeshGroup.add(dial);
+        story3dScene.add(radioMeshGroup);
+
+        // 1982 POLITICAL MAP OF UNDIVIDED INDIA (Back Wall)
+        const mapMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.85 });
+        wallMapMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.1), mapMat);
+        wallMapMesh.position.set(1.5, 2.1, -3.48);
+        wallMapMesh.name = 'wallMap';
+        story3dScene.add(wallMapMesh);
 
         // HEAVY METAL DOOR (Background Wall)
         const doorGroup = new THREE.Group();
@@ -1041,8 +1082,17 @@
           requestAnimationFrame(animate3DLoop);
           const time = clock.getElapsedTime();
 
-          // Subtle idle camera floating when not user dragging
-          if (!isUserInteracting3D && story3dCamera) {
+          // Smooth camera focus lerping when interacting with objects
+          if (isCameraAnimating && story3dCamera && story3dControls) {
+            story3dCamera.position.lerp(targetCameraPos, 0.05);
+            story3dControls.target.lerp(targetCameraLookAt, 0.05);
+            if (story3dCamera.position.distanceTo(targetCameraPos) < 0.02) {
+              isCameraAnimating = false;
+            }
+          }
+
+          // Subtle idle camera floating when not user dragging or animating
+          if (!isUserInteracting3D && !isCameraAnimating && story3dCamera) {
             story3dCamera.position.y += Math.sin(time * 0.8) * 0.0004;
           }
 
@@ -1107,33 +1157,82 @@
       mouseVector3D.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
       raycaster3D.setFromCamera(mouseVector3D, story3dCamera);
-      const intersects = raycaster3D.intersectObjects([manilaFolderMesh], true);
+
+      const interactiveList = [];
+      if (manilaFolderMesh) interactiveList.push(manilaFolderMesh);
+      if (newspaperMesh) interactiveList.push(newspaperMesh);
+      if (radioMeshGroup) interactiveList.push(radioMeshGroup);
+      if (wallMapMesh) interactiveList.push(wallMapMesh);
+
+      const intersects = raycaster3D.intersectObjects(interactiveList, true);
       const tooltip = document.getElementById('folder-tooltip');
 
       if (intersects.length > 0) {
         document.body.style.cursor = 'pointer';
-        if (tooltip) tooltip.classList.remove('hidden');
-        if (manilaFolderMesh) manilaFolderMesh.material.emissive.setHex(0x443311);
+        let hitObj = intersects[0].object;
+        let propName = hitObj.name;
+        if (!propName && hitObj.parent) propName = hitObj.parent.name;
+        activeHoveredProp = propName;
+
+        if (tooltip) {
+          tooltip.classList.remove('hidden');
+          const title = tooltip.querySelector('.prop-label-title');
+          const subtitle = tooltip.querySelector('.prop-label-sub');
+
+          if (propName === 'manilaFolder') {
+            if (title) title.textContent = '◉ MANILA FOLDER';
+            if (subtitle) subtitle.textContent = 'Click to investigate classified rebel files';
+          } else if (propName === 'radio') {
+            if (title) title.textContent = '◉ VINTAGE RADIO';
+            if (subtitle) subtitle.textContent = 'Click to listen to underground frequency';
+          } else if (propName === 'newspaper') {
+            if (title) title.textContent = '◉ PRESS DISPATCH';
+            if (subtitle) subtitle.textContent = 'Click to read secret Gazette headlines';
+          } else if (propName === 'wallMap') {
+            if (title) title.textContent = '◉ 1982 POLITICAL MAP';
+            if (subtitle) subtitle.textContent = 'Click to examine territories of Undivided India';
+          }
+        }
       } else {
         document.body.style.cursor = 'default';
+        activeHoveredProp = null;
         if (tooltip) tooltip.classList.add('hidden');
-        if (manilaFolderMesh) manilaFolderMesh.material.emissive.setHex(0x000000);
       }
     }
 
     function onPointerDown3D() {
-      if (!story3dCamera || !story3dScene) return;
-      raycaster3D.setFromCamera(mouseVector3D, story3dCamera);
-      const intersects = raycaster3D.intersectObjects([manilaFolderMesh], true);
-      if (intersects.length > 0 && manilaFolderMesh) {
-        manilaFolderMesh.position.y = 0.85;
-        manilaFolderMesh.rotation.z = -0.2;
-        setTimeout(() => {
-          if (manilaFolderMesh) {
-            manilaFolderMesh.position.y = 0.8;
-            manilaFolderMesh.rotation.z = 0;
-          }
-        }, 1200);
+      if (!story3dCamera || !story3dScene || !activeHoveredProp) return;
+
+      if (activeHoveredProp === 'manilaFolder') {
+        if (manilaFolderMesh) {
+          manilaFolderMesh.position.y = 0.85;
+          manilaFolderMesh.rotation.z = -0.2;
+          setTimeout(() => {
+            if (manilaFolderMesh) {
+              manilaFolderMesh.position.y = 0.8;
+              manilaFolderMesh.rotation.z = 0;
+            }
+          }, 1200);
+        }
+        targetCameraPos.set(0.15, 1.1, 0.5);
+        targetCameraLookAt.set(0.25, 0.8, 0.08);
+        isCameraAnimating = true;
+        showCinematicSubtitle('📁 Classified File #482: 14 underground rebel printing presses identified across Calcutta and Lahore.');
+      } else if (activeHoveredProp === 'radio') {
+        targetCameraPos.set(-0.4, 1.0, 0.5);
+        targetCameraLookAt.set(-0.6, 0.79, 0.1);
+        isCameraAnimating = true;
+        showCinematicSubtitle('📻 Radio Calcutta crackles: "Do not burn the manifesto tonight. Let them read it..."');
+      } else if (activeHoveredProp === 'newspaper') {
+        targetCameraPos.set(-0.05, 1.05, 0.45);
+        targetCameraLookAt.set(-0.15, 0.79, -0.05);
+        isCameraAnimating = true;
+        showCinematicSubtitle('📰 Gazette Headline: "STATE SECURITY BUREAU SEALS ALL INDEPENDENT PRINTING PRESSES".');
+      } else if (activeHoveredProp === 'wallMap') {
+        targetCameraPos.set(0.8, 1.8, -2.0);
+        targetCameraLookAt.set(1.5, 2.1, -3.48);
+        isCameraAnimating = true;
+        showCinematicSubtitle('🗺️ 1982 Map: Security forces closing perimeters around eastern rebel strongholds.');
       }
     }
 
@@ -1348,7 +1447,7 @@
 
     // DYNAMIC SCRIPTED NARRATIVE FLOW OVER HIGH-RES INTERROGATION ROOM BACKDROP
     function renderVisualTextScreen(screenName) {
-      showVRPanorama(); // Always display full 3D WebXR Interrogation Room background!
+      showVRPanorama();
       setStory3DSceneState(screenName);
 
       const detailView = document.getElementById('view-experience-detail');
@@ -1358,112 +1457,125 @@
       detailView.classList.remove('hidden');
 
       if (screenName === 'screen1') {
+        // Trigger cinematic introductory subtitle sequence
+        showCinematicSubtitle('The State Security Bureau just raided the Calcutta printing press.', 4500);
+        setTimeout(() => {
+          showCinematicSubtitle('They found your name listed inside the secret files of Mrityunjay.', 4500);
+        }, 5000);
+
+        // Reset camera to default desktop perspective
+        targetCameraPos.set(0, 1.35, 2.3);
+        targetCameraLookAt.set(0, 0.75, 0);
+        isCameraAnimating = true;
+
         contentContainer.innerHTML = `
-          <div class="p-8 rounded-3xl bg-stone-950/90 backdrop-blur-xl text-stone-100 shadow-2xl border border-stone-700 max-w-3xl mx-auto my-auto border-l-4 border-l-red-600 pointer-events-auto">
-            
-            <div class="flex items-center justify-between border-b border-stone-700/60 pb-3 mb-6">
+          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-3xl w-[92%] glass-panel border border-amber-500/50 rounded-2xl p-5 shadow-2xl pointer-events-auto space-y-3 border-l-4 border-l-amber-400">
+            <div class="flex items-center justify-between border-b border-amber-500/20 pb-2">
               <div class="flex items-center space-x-2">
-                <span class="w-3 h-3 rounded-full bg-red-600 animate-ping"></span>
-                <span class="text-xs font-mono text-red-400 font-bold uppercase tracking-widest">Scene 1 — The Checkpoint (Lahore Security Bureau)</span>
+                <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
+                <span class="text-xs font-mono text-amber-300 font-bold uppercase tracking-widest">INVESTIGATOR • LAHORE BUREAU (1982)</span>
               </div>
-              <span class="text-xs font-mono text-amber-200/80">1982 • Capital of Undivided India</span>
+              <span class="text-[10px] font-mono text-amber-400/70">INTERROGATION IN PROGRESS</span>
             </div>
 
-            <div class="font-serif-vintage text-stone-100 text-base md:text-lg leading-relaxed space-y-4 my-6">
-              <p class="italic text-amber-200/90">The State Security Bureau just raided the Calcutta printing press. They found your name listed inside the secret files of the underground rebel poet, <strong class="text-amber-400">Mrityunjay</strong>.</p>
-              <p>A heavy boot kicks your door open. You are shoved into a concrete room with a single blinking desk lamp. An investigator slides a manila folder across the cold metal table.</p>
-              <p class="font-bold text-amber-300 text-xl">"Tell us where the eastern rebels are hiding, or you go down with him."</p>
-            </div>
+            <p class="font-serif-vintage text-amber-100 text-sm md:text-base italic">
+              "Tell us where the eastern rebels are hiding, or you go down with him."
+            </p>
 
             <!-- CHOICE BUTTONS OVERLAY -->
-            <div id="choice-buttons-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 border-t border-stone-700/60">
-              <button onclick="renderVisualTextScreen('pathA')" class="p-5 rounded-2xl bg-stone-900/90 hover:bg-amber-500/30 border border-stone-700 hover:border-amber-400 text-left transition-all group shadow-2xl">
-                <span class="text-xs text-amber-400 font-bold block mb-1">CHOICE 1</span>
-                <p class="font-cinzel text-sm font-bold text-stone-100 group-hover:text-amber-300">"I know nothing. I am just a reader."</p>
+            <div id="choice-buttons-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <button onclick="renderVisualTextScreen('pathA')" class="p-3.5 rounded-xl bg-stone-900/90 hover:bg-amber-500/20 border border-stone-700 hover:border-amber-400 text-left transition-all group shadow-xl">
+                <span class="text-[10px] text-amber-400 font-bold block">CHOICE 1</span>
+                <p class="font-cinzel text-xs font-bold text-stone-100 group-hover:text-amber-300">"I know nothing. I am just a reader."</p>
               </button>
-              <button onclick="renderVisualTextScreen('pathB')" class="p-5 rounded-2xl bg-stone-900/90 hover:bg-amber-500/30 border border-stone-700 hover:border-amber-400 text-left transition-all group shadow-2xl">
-                <span class="text-xs text-amber-400 font-bold block mb-1">CHOICE 2</span>
-                <p class="font-cinzel text-sm font-bold text-stone-100 group-hover:text-amber-300">"The East will rise. Do your worst."</p>
+              <button onclick="renderVisualTextScreen('pathB')" class="p-3.5 rounded-xl bg-stone-900/90 hover:bg-amber-500/20 border border-stone-700 hover:border-amber-400 text-left transition-all group shadow-xl">
+                <span class="text-[10px] text-amber-400 font-bold block">CHOICE 2</span>
+                <p class="font-cinzel text-xs font-bold text-stone-100 group-hover:text-amber-300">"The East will rise. Do your worst."</p>
               </button>
             </div>
-
           </div>
         `;
       } else if (screenName === 'pathA') {
+        showCinematicSubtitle('The investigator smiles coldly: "Everyone is just a reader until the presses start burning..."', 5000);
+        
+        // Camera lerps toward heavy door
+        targetCameraPos.set(-1.2, 1.35, -1.5);
+        targetCameraLookAt.set(-2.5, 1.25, -3.45);
+        isCameraAnimating = true;
+
         contentContainer.innerHTML = `
-          <div class="p-8 rounded-3xl bg-[#0f172a]/95 backdrop-blur-xl text-slate-100 shadow-2xl border border-blue-600/50 max-w-3xl mx-auto border-l-4 border-l-blue-400 pointer-events-auto">
-            
-            <div class="flex items-center justify-between border-b border-blue-800/40 pb-3 mb-6">
+          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-3xl w-[92%] glass-panel border border-blue-500/50 rounded-2xl p-5 shadow-2xl pointer-events-auto space-y-3 border-l-4 border-l-blue-400">
+            <div class="flex items-center justify-between border-b border-blue-500/20 pb-2">
               <div class="flex items-center space-x-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
-                <span class="text-xs font-mono text-blue-300 font-bold uppercase tracking-widest">Scene 2 — Path A: The Compliant Path</span>
+                <span class="text-xs font-mono text-blue-300 font-bold uppercase tracking-widest">SCENE 2 • PATH A: THE COMPLIANT PATH</span>
               </div>
-              <span class="text-xs font-mono text-blue-300">Interrogation Room 4B</span>
+              <span class="text-[10px] font-mono text-blue-300">IRON DOOR UNLATCHING</span>
             </div>
 
-            <div class="font-serif-vintage text-slate-100 text-base md:text-lg leading-relaxed space-y-4 my-6">
-              <p class="italic text-blue-300">The investigator smiles coldly and leans back into the shadows.</p>
-              <p class="text-xl font-semibold text-white">"Everyone is 'just a reader' until the printing presses start burning. You think compliance keeps you safe here in the West? The state knows your family. They know your history. By staying silent, you have chosen your side. If you won't talk to us, we will make sure you vanish into the exact same silence."</p>
-              <p class="text-xs font-mono text-slate-300">Heavy, synchronized footsteps stop right outside the iron door. A heavy deadbolt slowly slides open.</p>
-            </div>
+            <p class="font-serif-vintage text-slate-100 text-sm md:text-base">
+              "You think compliance keeps you safe? By staying silent, you have chosen your side. You vanish into the exact same silence."
+            </p>
 
-            <div class="pt-6 border-t border-blue-800/40">
-              <button onclick="renderVisualTextScreen('screen3')" class="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 font-cinzel font-bold text-white text-sm tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2">
+            <div class="pt-1">
+              <button onclick="renderVisualTextScreen('screen3')" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-cinzel font-bold text-white text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2">
                 <span>Face the consequences...</span>
                 <i data-lucide="arrow-right" class="w-4 h-4"></i>
               </button>
             </div>
-
           </div>
         `;
       } else if (screenName === 'pathB') {
+        showCinematicSubtitle('Defense siren wails across the building! Power grid plunged into darkness...', 5000);
+        
+        // Camera pulls back
+        targetCameraPos.set(0, 1.6, 3.2);
+        targetCameraLookAt.set(0, 0.75, 0);
+        isCameraAnimating = true;
+
         contentContainer.innerHTML = `
-          <div class="p-8 rounded-3xl bg-[#24170e]/95 backdrop-blur-xl text-amber-100 shadow-2xl border border-amber-600/50 max-w-3xl mx-auto border-l-4 border-l-amber-500 pointer-events-auto">
-            
-            <div class="flex items-center justify-between border-b border-amber-800/40 pb-3 mb-6">
+          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-3xl w-[92%] glass-panel border border-amber-600/50 rounded-2xl p-5 shadow-2xl pointer-events-auto space-y-3 border-l-4 border-l-red-500">
+            <div class="flex items-center justify-between border-b border-amber-800/40 pb-2">
               <div class="flex items-center space-x-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-                <span class="text-xs font-mono text-amber-400 font-bold uppercase tracking-widest">Scene 2 — Path B: The Rebel Path</span>
+                <span class="text-xs font-mono text-amber-400 font-bold uppercase tracking-widest">SCENE 2 • PATH B: THE REBEL PATH</span>
               </div>
-              <span class="text-xs font-mono text-amber-300">Interrogation Room 4B</span>
+              <span class="text-[10px] font-mono text-red-400 font-bold">DEFENSE SIREN ACTIVE</span>
             </div>
 
-            <div class="font-serif-vintage text-amber-100 text-base md:text-lg leading-relaxed space-y-4 my-6">
-              <p class="italic text-amber-400">The investigator slams both hands down on the metal table, his eyes blazing.</p>
-              <p class="text-xl font-semibold text-amber-100">"You think you're a martyr? The eastern jungles of Assam are already burning, and your poet Mrityunjay won't be there to save you. By defying the Bureau, you have signed a confession of treason. We don't need your words anymore—we already have your execution order."</p>
-              <p class="text-xs font-mono text-red-400 font-bold">Suddenly, a high-pitched defense siren wails across the building. The power grids flicker and plunge the text into pitch black.</p>
-            </div>
+            <p class="font-serif-vintage text-amber-100 text-sm md:text-base">
+              "You think you're a martyr? The eastern jungles are already burning! We don't need your words—we have your execution order."
+            </p>
 
-            <div class="pt-6 border-t border-amber-800/40">
-              <button onclick="renderVisualTextScreen('screen3')" class="w-full py-4 rounded-xl bg-amber-600 hover:bg-amber-500 font-cinzel font-bold text-stone-950 text-sm tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2">
+            <div class="pt-1">
+              <button onclick="renderVisualTextScreen('screen3')" class="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 font-cinzel font-bold text-stone-950 text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2">
                 <span>Seize the moment...</span>
                 <i data-lucide="zap" class="w-4 h-4"></i>
               </button>
             </div>
-
           </div>
         `;
       } else if (screenName === 'screen3') {
-        contentContainer.innerHTML = `
-          <div class="p-8 rounded-3xl bg-stone-950/95 backdrop-blur-xl text-stone-100 shadow-2xl border border-red-700/60 text-center max-w-3xl mx-auto pointer-events-auto">
-            
-            <span class="text-xs font-mono text-red-500 uppercase tracking-widest font-bold block mb-2">THE FILE IS SEALED</span>
-            <h2 class="font-cinzel text-3xl font-extrabold text-red-600 mb-4 glow-gold">History is rewritten by those who survive.</h2>
+        showCinematicSubtitle('History is rewritten by those who survive. The file is sealed.', 6000);
 
-            <p class="font-serif-vintage text-base md:text-lg text-stone-300 max-w-2xl mx-auto leading-relaxed mb-8">
-              Mrityunjay's rebellion has already broken the perimeter walls of the Bureau, and you are trapped right in the line of fire. Will India stand united under tyranny, or shatter into a million pieces? Uncover the truth before the state clears your file permanently.
+        contentContainer.innerHTML = `
+          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-2xl w-[92%] glass-panel border border-red-700/60 rounded-2xl p-6 shadow-2xl pointer-events-auto text-center space-y-4">
+            <span class="text-[10px] font-mono text-red-400 uppercase tracking-widest font-bold block">CLASSIFIED FILE SEALED</span>
+            <h3 class="font-cinzel text-xl font-extrabold text-red-500 glow-gold">History is rewritten by those who survive.</h3>
+
+            <p class="font-serif-vintage text-xs md:text-sm text-stone-300 max-w-lg mx-auto leading-relaxed">
+              Mrityunjay's rebellion has broken the perimeter walls of the Bureau. Will India stand united under tyranny, or shatter into a million pieces?
             </p>
 
-            <div class="space-y-4 max-w-md mx-auto">
-              <a href="#" class="block w-full py-4 px-6 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 font-cinzel font-bold text-white text-sm tracking-wider uppercase shadow-xl transition-all hover:scale-105 border border-red-500/40">
+            <div class="space-y-2 pt-2">
+              <a href="#" class="block w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 font-cinzel font-bold text-white text-xs tracking-wider uppercase shadow-xl transition-all hover:scale-105 border border-red-500/40">
                 📖 JOIN THE RESISTANCE — BUY "THE MISSING NATION" NOW
               </a>
               
-              <button onclick="loginAsRole('Publisher')" class="inline-block text-xs font-mono text-amber-400 hover:text-amber-300 underline pt-2">
-                📊 View Publisher ROI Analytics Dashboard (Internal Pitch Demo Link)
+              <button onclick="loginAsRole('Publisher')" class="inline-block text-[11px] font-mono text-amber-400 hover:text-amber-300 underline">
+                📊 View Publisher ROI Analytics Dashboard
               </button>
             </div>
-
           </div>
         `;
       } else {
