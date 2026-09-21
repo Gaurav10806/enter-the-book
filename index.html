@@ -382,7 +382,658 @@
 
     </div>
   </div>
+  <!-- ADMIN DASHBOARD OVERLAY VIEW -->
+  <div id="admin-dashboard-view" class="fixed inset-0 z-40 bg-stone-950 hidden overflow-y-auto pointer-events-auto p-6 md:p-10">
+    <div class="max-w-7xl mx-auto space-y-8">
+      
+      <!-- TOP NAV & PROFILE STATUS -->
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between pb-6 border-b border-amber-500/20 gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 text-xs font-mono font-bold uppercase tracking-wider flex items-center space-x-1">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>ADMIN PLATFORM PORTAL</span>
+            </span>
+            <span class="text-xs text-amber-400/70 font-mono">• Platform-Wide Command & Aggregated Analytics</span>
+          </div>
+          <h2 class="font-cinzel text-3xl font-extrabold text-amber-100 mt-1">System Administration & Ecosystem Control</h2>
+        </div>
 
+        <div class="flex items-center space-x-4">
+          <button onclick="openRoleModal()" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/40">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+            <span>Switch Role (<strong id="admin-active-role-label">Admin</strong>)</span>
+          </button>
+          <button onclick="goToHome()" class="glass-button px-4 py-2 rounded-xl text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/40">
+            <i data-lucide="home" class="w-4 h-4"></i>
+            <span>Return to 3D Library</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ADMIN NAVIGATION TABS -->
+      <div class="flex items-center space-x-2 border-b border-stone-800 pb-3 overflow-x-auto no-scrollbar">
+        <button id="admin-tab-btn-overview" onclick="switchAdminTab('overview')" class="px-4 py-2 rounded-xl text-xs font-cinzel font-bold border border-amber-400/50 bg-amber-500/20 text-amber-300 transition-all flex items-center space-x-2">
+          <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          <span>Dashboard Overview</span>
+        </button>
+        <button id="admin-tab-btn-books" onclick="switchAdminTab('books')" class="px-4 py-2 rounded-xl text-xs font-cinzel font-bold border border-stone-800 bg-stone-900/60 text-amber-200/70 hover:text-amber-200 hover:border-amber-500/30 transition-all flex items-center space-x-2">
+          <i data-lucide="book-open" class="w-4 h-4"></i>
+          <span>Platform Books</span>
+          <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold">24</span>
+        </button>
+        <button id="admin-tab-btn-publishers" onclick="switchAdminTab('publishers')" class="px-4 py-2 rounded-xl text-xs font-cinzel font-bold border border-stone-800 bg-stone-900/60 text-amber-200/70 hover:text-amber-200 hover:border-amber-500/30 transition-all flex items-center space-x-2">
+          <i data-lucide="building-2" class="w-4 h-4"></i>
+          <span>Registered Publishers</span>
+          <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold">12</span>
+        </button>
+        <button id="admin-tab-btn-users" onclick="switchAdminTab('users')" class="px-4 py-2 rounded-xl text-xs font-cinzel font-bold border border-stone-800 bg-stone-900/60 text-amber-200/70 hover:text-amber-200 hover:border-amber-500/30 transition-all flex items-center space-x-2">
+          <i data-lucide="users" class="w-4 h-4"></i>
+          <span>Registered Readers</span>
+          <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-mono font-bold">86.4K</span>
+        </button>
+        <button id="admin-tab-btn-analytics" onclick="switchAdminTab('analytics')" class="px-4 py-2 rounded-xl text-xs font-cinzel font-bold border border-stone-800 bg-stone-900/60 text-amber-200/70 hover:text-amber-200 hover:border-amber-500/30 transition-all flex items-center space-x-2">
+          <i data-lucide="line-chart" class="w-4 h-4"></i>
+          <span>Ecosystem Analytics</span>
+        </button>
+        <button id="admin-tab-btn-settings" onclick="switchAdminTab('settings')" class="px-4 py-2 rounded-xl text-xs font-cinzel font-bold border border-stone-800 bg-stone-900/60 text-amber-200/70 hover:text-amber-200 hover:border-amber-500/30 transition-all flex items-center space-x-2">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+          <span>System Settings</span>
+        </button>
+      </div>
+
+      <!-- SUMMARY CARDS (7 PLATFORM-WIDE KPI STATS) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">Total Books</span>
+            <i data-lucide="book-open" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="font-cinzel text-3xl font-extrabold text-amber-100">24</p>
+          <span class="text-[11px] text-emerald-400 font-mono font-bold">↑ +4 added this month</span>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">Total Publishers</span>
+            <i data-lucide="building-2" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="font-cinzel text-3xl font-extrabold text-amber-100">12</p>
+          <span class="text-[11px] text-emerald-400 font-mono font-bold">↑ +2 houses onboarded</span>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">Total Readers / Users</span>
+            <i data-lucide="users" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="font-cinzel text-3xl font-extrabold text-amber-100">86,420</p>
+          <span class="text-[11px] text-emerald-400 font-mono font-bold">↑ +18.4% user growth</span>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">Total Experiences</span>
+            <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="font-cinzel text-3xl font-extrabold text-amber-100">120</p>
+          <span class="text-[11px] text-amber-300 font-mono">3D / AR / VR / Audio</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">Active Books</span>
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+          </div>
+          <p class="font-cinzel text-2xl font-extrabold text-amber-100">21 Active</p>
+          <span class="text-[11px] text-stone-400 font-mono">87.5% publication rate</span>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">Pending Approvals</span>
+            <i data-lucide="clock" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="font-cinzel text-2xl font-extrabold text-amber-300">3 Pending</p>
+          <span class="text-[11px] text-amber-400/80 font-mono">Requires admin review</span>
+        </div>
+
+        <div class="glass-panel p-5 rounded-2xl border border-amber-500/30">
+          <div class="flex justify-between items-center text-amber-400/80 mb-2">
+            <span class="text-xs font-mono uppercase font-bold">Total Engagement</span>
+            <i data-lucide="activity" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <p class="font-cinzel text-2xl font-extrabold text-amber-100">94.6%</p>
+          <span class="text-[11px] text-emerald-400 font-mono font-bold">Avg 12.4m session length</span>
+        </div>
+      </div>
+
+      <!-- TAB 1: DASHBOARD OVERVIEW -->
+      <div id="admin-view-overview" class="space-y-8">
+        
+        <!-- PLATFORM BOOKS TABLE OVERVIEW -->
+        <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-stone-800">
+            <div>
+              <h3 class="font-cinzel text-xl font-bold text-amber-200">Platform-Wide Books Catalog</h3>
+              <p class="text-xs text-amber-200/60">Global view across all registered publishers</p>
+            </div>
+            <button onclick="switchAdminTab('books')" class="glass-button px-3.5 py-1.5 rounded-xl text-xs text-amber-300 font-mono flex items-center space-x-1">
+              <span>View All 24 Books</span>
+              <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono">
+              <thead>
+                <tr class="text-amber-400/70 border-b border-stone-800 pb-2">
+                  <th class="py-2">BOOK</th>
+                  <th class="py-2">AUTHOR</th>
+                  <th class="py-2">PUBLISHER</th>
+                  <th class="py-2">EXPERIENCES</th>
+                  <th class="py-2">READERS</th>
+                  <th class="py-2">STATUS</th>
+                  <th class="py-2 text-right">ACTION</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stone-800 text-stone-200">
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100 flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span>The Missing Nation</span>
+                  </td>
+                  <td class="py-3 text-amber-200/80">Tariq Ali</td>
+                  <td class="py-3 text-purple-300 font-bold">Penguin Random House</td>
+                  <td class="py-3 text-amber-400">5 Dimensions (3D, AR, Audio)</td>
+                  <td class="py-3">42,150</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">Active</span></td>
+                  <td class="py-3 text-right">
+                    <button class="px-2.5 py-1 rounded-lg bg-stone-900 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20">Manage</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100 flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span>Echoes of Indus</span>
+                  </td>
+                  <td class="py-3 text-amber-200/80">Ayesha Siddiqui</td>
+                  <td class="py-3 text-purple-300 font-bold">HarperCollins</td>
+                  <td class="py-3 text-amber-400">4 Dimensions (3D, Audio)</td>
+                  <td class="py-3">18,920</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">Active</span></td>
+                  <td class="py-3 text-right">
+                    <button class="px-2.5 py-1 rounded-lg bg-stone-900 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20">Manage</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100 flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span>Chronicles of 1947</span>
+                  </td>
+                  <td class="py-3 text-amber-200/80">Kushwant Singh</td>
+                  <td class="py-3 text-purple-300 font-bold">Vintage Books</td>
+                  <td class="py-3 text-amber-400">5 Dimensions (Full Suite)</td>
+                  <td class="py-3">15,400</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">Pending Review</span></td>
+                  <td class="py-3 text-right">
+                    <button class="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400 text-amber-200 hover:bg-amber-500/30">Review</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100 flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span>Shadows over Lahore</span>
+                  </td>
+                  <td class="py-3 text-amber-200/80">Mohsin Hamid</td>
+                  <td class="py-3 text-purple-300 font-bold">Bloomsbury Publishing</td>
+                  <td class="py-3 text-amber-400">3 Dimensions (Audio, Map)</td>
+                  <td class="py-3">9,950</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">Active</span></td>
+                  <td class="py-3 text-right">
+                    <button class="px-2.5 py-1 rounded-lg bg-stone-900 border border-amber-500/30 text-amber-300 hover:bg-amber-500/20">Manage</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TWO COLUMN GRID: PENDING CONTENT & ECOSYSTEM ACTIVITY -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          <!-- PENDING APPROVALS WIDGET -->
+          <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-stone-800">
+              <div>
+                <h3 class="font-cinzel text-lg font-bold text-amber-200">Pending Content Approvals</h3>
+                <p class="text-xs text-amber-200/60">3 manuscripts submitted by publishers awaiting admin verification</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-mono font-bold border border-amber-400/30">3 Pending</span>
+            </div>
+
+            <div class="space-y-3">
+              <div class="p-3.5 rounded-2xl bg-stone-900/80 border border-stone-800 flex items-center justify-between">
+                <div>
+                  <h4 class="font-cinzel text-xs font-bold text-amber-100">Chronicles of 1947</h4>
+                  <p class="text-[11px] text-amber-200/60 mt-0.5">Submitted by Vintage Books • 5 VR Scenes</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <button onclick="alert('Manuscript approved!')" class="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold hover:bg-emerald-500/30">Approve</button>
+                  <button class="px-3 py-1 rounded-xl bg-stone-800 text-stone-300 text-xs font-mono hover:bg-stone-700">Inspect</button>
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-2xl bg-stone-900/80 border border-stone-800 flex items-center justify-between">
+                <div>
+                  <h4 class="font-cinzel text-xs font-bold text-amber-100">The Silk Road Secrets</h4>
+                  <p class="text-[11px] text-amber-200/60 mt-0.5">Submitted by Simon & Schuster • 3D Map</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <button onclick="alert('Manuscript approved!')" class="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold hover:bg-emerald-500/30">Approve</button>
+                  <button class="px-3 py-1 rounded-xl bg-stone-800 text-stone-300 text-xs font-mono hover:bg-stone-700">Inspect</button>
+                </div>
+              </div>
+
+              <div class="p-3.5 rounded-2xl bg-stone-900/80 border border-stone-800 flex items-center justify-between">
+                <div>
+                  <h4 class="font-cinzel text-xs font-bold text-amber-100">Monsoons of Malabar</h4>
+                  <p class="text-[11px] text-amber-200/60 mt-0.5">Submitted by Penguin Random House • Spatial Audio</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <button onclick="alert('Manuscript approved!')" class="px-3 py-1 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-mono font-bold hover:bg-emerald-500/30">Approve</button>
+                  <button class="px-3 py-1 rounded-xl bg-stone-800 text-stone-300 text-xs font-mono hover:bg-stone-700">Inspect</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ECOSYSTEM METRICS BREAKDOWN -->
+          <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
+            <h3 class="font-cinzel text-lg font-bold text-amber-200">Most Used Experience Dimensions</h3>
+            <div class="space-y-3">
+              <div>
+                <div class="flex justify-between text-xs font-mono text-amber-200 mb-1">
+                  <span>Interactive Branching Story</span>
+                  <span class="font-bold text-amber-400">42% (36.2K Readers)</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-stone-900 overflow-hidden">
+                  <div class="h-full bg-amber-400 rounded-full" style="width: 42%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-mono text-amber-200 mb-1">
+                  <span>3D World & VR Scene Reenactments</span>
+                  <span class="font-bold text-purple-400">28% (24.1K Readers)</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-stone-900 overflow-hidden">
+                  <div class="h-full bg-purple-400 rounded-full" style="width: 28%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-mono text-amber-200 mb-1">
+                  <span>Spatial 3D Audio Experience</span>
+                  <span class="font-bold text-emerald-400">18% (15.5K Readers)</span>
+                </div>
+                <div class="w-full h-full rounded-full bg-stone-900 overflow-hidden">
+                  <div class="h-full bg-emerald-400 rounded-full" style="width: 18%;"></div>
+                </div>
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-mono text-amber-200 mb-1">
+                  <span>Interactive Story Map & Lore</span>
+                  <span class="font-bold text-blue-400">12% (10.3K Readers)</span>
+                </div>
+                <div class="w-full h-2 rounded-full bg-stone-900 overflow-hidden">
+                  <div class="h-full bg-blue-400 rounded-full" style="width: 12%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- TAB 2: BOOKS SECTION -->
+      <div id="admin-view-books" class="hidden space-y-6">
+        <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-800">
+            <div>
+              <h3 class="font-cinzel text-xl font-bold text-amber-200">All Platform Books (Cross-Publisher)</h3>
+              <p class="text-xs text-amber-200/60">Admin control panel for managing books across all registered publishers</p>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+              <input id="admin-books-search" type="text" onkeyup="filterAdminBooks()" placeholder="Search books, authors, publishers..." 
+                     class="px-4 py-2 text-xs rounded-xl bg-stone-900 border border-amber-500/30 text-amber-100 placeholder-amber-200/40 focus:outline-none focus:border-amber-400 w-64">
+              <select id="admin-books-status-filter" onchange="filterAdminBooks()" class="px-3 py-2 text-xs rounded-xl bg-stone-900 border border-amber-500/30 text-amber-200 focus:outline-none">
+                <option value="all">All Statuses</option>
+                <option value="active">Active / Published</option>
+                <option value="pending">Pending Review</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono" id="admin-books-table">
+              <thead>
+                <tr class="text-amber-400/70 border-b border-stone-800 pb-2">
+                  <th class="py-2">BOOK</th>
+                  <th class="py-2">AUTHOR</th>
+                  <th class="py-2">PUBLISHER</th>
+                  <th class="py-2">EXPERIENCES</th>
+                  <th class="py-2">READERS</th>
+                  <th class="py-2">STATUS</th>
+                  <th class="py-2 text-right">ACTION</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stone-800 text-stone-200">
+                <tr data-status="active">
+                  <td class="py-3 font-semibold text-amber-100">The Missing Nation</td>
+                  <td class="py-3 text-amber-200/80">Tariq Ali</td>
+                  <td class="py-3 text-purple-300 font-bold">Penguin Random House</td>
+                  <td class="py-3 text-amber-400">5 Dimensions (Full Suite)</td>
+                  <td class="py-3">42,150</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Active</span></td>
+                  <td class="py-3 text-right space-x-1">
+                    <button class="px-2 py-1 rounded bg-stone-900 border border-amber-500/30 text-amber-300">View</button>
+                    <button class="px-2 py-1 rounded bg-stone-900 border border-stone-700 text-stone-300">Edit</button>
+                  </td>
+                </tr>
+                <tr data-status="active">
+                  <td class="py-3 font-semibold text-amber-100">Echoes of Indus</td>
+                  <td class="py-3 text-amber-200/80">Ayesha Siddiqui</td>
+                  <td class="py-3 text-purple-300 font-bold">HarperCollins</td>
+                  <td class="py-3 text-amber-400">4 Dimensions</td>
+                  <td class="py-3">18,920</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Active</span></td>
+                  <td class="py-3 text-right space-x-1">
+                    <button class="px-2 py-1 rounded bg-stone-900 border border-amber-500/30 text-amber-300">View</button>
+                    <button class="px-2 py-1 rounded bg-stone-900 border border-stone-700 text-stone-300">Edit</button>
+                  </td>
+                </tr>
+                <tr data-status="pending">
+                  <td class="py-3 font-semibold text-amber-100">Chronicles of 1947</td>
+                  <td class="py-3 text-amber-200/80">Kushwant Singh</td>
+                  <td class="py-3 text-purple-300 font-bold">Vintage Books</td>
+                  <td class="py-3 text-amber-400">5 Dimensions</td>
+                  <td class="py-3">15,400</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold">Pending Review</span></td>
+                  <td class="py-3 text-right space-x-1">
+                    <button class="px-2 py-1 rounded bg-amber-500/20 border border-amber-400 text-amber-200">Approve</button>
+                  </td>
+                </tr>
+                <tr data-status="active">
+                  <td class="py-3 font-semibold text-amber-100">Shadows over Lahore</td>
+                  <td class="py-3 text-amber-200/80">Mohsin Hamid</td>
+                  <td class="py-3 text-purple-300 font-bold">Bloomsbury Publishing</td>
+                  <td class="py-3 text-amber-400">3 Dimensions</td>
+                  <td class="py-3">9,950</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Active</span></td>
+                  <td class="py-3 text-right space-x-1">
+                    <button class="px-2 py-1 rounded bg-stone-900 border border-amber-500/30 text-amber-300">View</button>
+                    <button class="px-2 py-1 rounded bg-stone-900 border border-stone-700 text-stone-300">Edit</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: PUBLISHERS SECTION -->
+      <div id="admin-view-publishers" class="hidden space-y-6">
+        <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-800">
+            <div>
+              <h3 class="font-cinzel text-xl font-bold text-amber-200">Registered Publishers</h3>
+              <p class="text-xs text-amber-200/60">Platform-wide listing of all 12 partner publishing houses</p>
+            </div>
+            
+            <input id="admin-publishers-search" type="text" onkeyup="filterAdminPublishers()" placeholder="Search publishers..." 
+                   class="px-4 py-2 text-xs rounded-xl bg-stone-900 border border-amber-500/30 text-amber-100 placeholder-amber-200/40 focus:outline-none focus:border-amber-400 w-64">
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono" id="admin-publishers-table">
+              <thead>
+                <tr class="text-amber-400/70 border-b border-stone-800 pb-2">
+                  <th class="py-2">PUBLISHER NAME</th>
+                  <th class="py-2">PUBLISHED BOOKS</th>
+                  <th class="py-2">TOTAL READERS</th>
+                  <th class="py-2">PENDING CONTENT</th>
+                  <th class="py-2">STATUS</th>
+                  <th class="py-2 text-right">ACTION</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stone-800 text-stone-200">
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100">Penguin Random House</td>
+                  <td class="py-3 text-amber-300">8 Books</td>
+                  <td class="py-3">54,290</td>
+                  <td class="py-3 text-amber-400">1 Pending</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Verified Partner</span></td>
+                  <td class="py-3 text-right">
+                    <button class="px-2.5 py-1 rounded bg-stone-900 border border-amber-500/30 text-amber-300">Inspect Catalog</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100">HarperCollins India</td>
+                  <td class="py-3 text-amber-300">5 Books</td>
+                  <td class="py-3">22,180</td>
+                  <td class="py-3 text-stone-400">0 Pending</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Verified Partner</span></td>
+                  <td class="py-3 text-right">
+                    <button class="px-2.5 py-1 rounded bg-stone-900 border border-amber-500/30 text-amber-300">Inspect Catalog</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100">Vintage Books</td>
+                  <td class="py-3 text-amber-300">4 Books</td>
+                  <td class="py-3">18,400</td>
+                  <td class="py-3 text-amber-400">1 Pending</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Verified Partner</span></td>
+                  <td class="py-3 text-right">
+                    <button class="px-2.5 py-1 rounded bg-stone-900 border border-amber-500/30 text-amber-300">Inspect Catalog</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100">Bloomsbury Publishing</td>
+                  <td class="py-3 text-amber-300">4 Books</td>
+                  <td class="py-3">12,950</td>
+                  <td class="py-3 text-stone-400">0 Pending</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Verified Partner</span></td>
+                  <td class="py-3 text-right">
+                    <button class="px-2.5 py-1 rounded bg-stone-900 border border-amber-500/30 text-amber-300">Inspect Catalog</button>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100">Simon & Schuster</td>
+                  <td class="py-3 text-amber-300">3 Books</td>
+                  <td class="py-3">8,600</td>
+                  <td class="py-3 text-amber-400">1 Pending</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Verified Partner</span></td>
+                  <td class="py-3 text-right">
+                    <button class="px-2.5 py-1 rounded bg-stone-900 border border-amber-500/30 text-amber-300">Inspect Catalog</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: USERS SECTION -->
+      <div id="admin-view-users" class="hidden space-y-6">
+        <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-stone-800">
+            <div>
+              <h3 class="font-cinzel text-xl font-bold text-amber-200">Registered Readers (Platform-Wide)</h3>
+              <p class="text-xs text-amber-200/60">Live directory of registered users and engagement analytics</p>
+            </div>
+            
+            <input id="admin-users-search" type="text" onkeyup="filterAdminUsers()" placeholder="Search readers by name or email..." 
+                   class="px-4 py-2 text-xs rounded-xl bg-stone-900 border border-amber-500/30 text-amber-100 placeholder-amber-200/40 focus:outline-none focus:border-amber-400 w-64">
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono" id="admin-users-table">
+              <thead>
+                <tr class="text-amber-400/70 border-b border-stone-800 pb-2">
+                  <th class="py-2">READER</th>
+                  <th class="py-2">EMAIL / IDENTIFIER</th>
+                  <th class="py-2">TOTAL ACTIVITY</th>
+                  <th class="py-2">BOOKS EXPLORED</th>
+                  <th class="py-2">PREFERRED DIMENSION</th>
+                  <th class="py-2">STATUS</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-stone-800 text-stone-200">
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100 flex items-center space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-[10px]">A</div>
+                    <span>Aravind Kumar</span>
+                  </td>
+                  <td class="py-3 text-amber-200/70">aravind.k@gmail.com</td>
+                  <td class="py-3 text-amber-300">18h 42m (24 sessions)</td>
+                  <td class="py-3">5 Books</td>
+                  <td class="py-3 text-purple-300">Interactive Story (Branch B)</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Active Subscriber</span></td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100 flex items-center space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-[10px]">P</div>
+                    <span>Priya Sharma</span>
+                  </td>
+                  <td class="py-3 text-amber-200/70">priya_sharma88@outlook.com</td>
+                  <td class="py-3 text-amber-300">12h 15m (16 sessions)</td>
+                  <td class="py-3">3 Books</td>
+                  <td class="py-3 text-emerald-300">Spatial Audio Book</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Active Reader</span></td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100 flex items-center space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-[10px]">D</div>
+                    <span>Dev Malhotra</span>
+                  </td>
+                  <td class="py-3 text-amber-200/70">dev.malhotra@techcorp.in</td>
+                  <td class="py-3 text-amber-300">22h 08m (31 sessions)</td>
+                  <td class="py-3">6 Books</td>
+                  <td class="py-3 text-amber-400">3D World VR Reenactment</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Active Subscriber</span></td>
+                </tr>
+                <tr>
+                  <td class="py-3 font-semibold text-amber-100 flex items-center space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center font-bold text-[10px]">S</div>
+                    <span>Sanya Gupta</span>
+                  </td>
+                  <td class="py-3 text-amber-200/70">sanya_books@yahoo.com</td>
+                  <td class="py-3 text-amber-300">9h 50m (11 sessions)</td>
+                  <td class="py-3">2 Books</td>
+                  <td class="py-3 text-blue-300">Story Map & Location Lore</td>
+                  <td class="py-3"><span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 font-bold">Active Reader</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: ANALYTICS SECTION -->
+      <div id="admin-view-analytics" class="hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
+            <h3 class="font-cinzel text-lg font-bold text-amber-200">Platform Growth Velocity</h3>
+            <div class="space-y-4 text-xs font-mono">
+              <div class="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 space-y-2">
+                <div class="flex justify-between font-bold text-emerald-400">
+                  <span>Monthly Reader Onboarding</span>
+                  <span>+18.4% YoY</span>
+                </div>
+                <p class="text-amber-200/60 leading-relaxed">
+                  Platform reader signups increased by 14,200 new accounts following the launch of 3D Interrogation Room experiences.
+                </p>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 space-y-2">
+                <div class="flex justify-between font-bold text-amber-300">
+                  <span>Publisher Retention & Acquisition</span>
+                  <span>96.2% Retention</span>
+                </div>
+                <p class="text-amber-200/60 leading-relaxed">
+                  12 active publishing houses maintain a 100% active catalog renewal rate with 3 additional publishers pending onboarding.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
+            <h3 class="font-cinzel text-lg font-bold text-amber-200">Most Explored Titles Leaderboard</h3>
+            <div class="space-y-3 font-mono text-xs">
+              <div class="flex items-center justify-between p-3 rounded-xl bg-stone-900/80 border border-stone-800">
+                <span class="font-bold text-amber-200">1. The Missing Nation</span>
+                <span class="text-amber-400 font-bold">42,150 Readers</span>
+              </div>
+              <div class="flex items-center justify-between p-3 rounded-xl bg-stone-900/80 border border-stone-800">
+                <span class="font-bold text-amber-200">2. Echoes of Indus</span>
+                <span class="text-amber-400 font-bold">18,920 Readers</span>
+              </div>
+              <div class="flex items-center justify-between p-3 rounded-xl bg-stone-900/80 border border-stone-800">
+                <span class="font-bold text-amber-200">3. Chronicles of 1947</span>
+                <span class="text-amber-400 font-bold">15,400 Readers</span>
+              </div>
+              <div class="flex items-center justify-between p-3 rounded-xl bg-stone-900/80 border border-stone-800">
+                <span class="font-bold text-amber-200">4. Shadows over Lahore</span>
+                <span class="text-amber-400 font-bold">9,950 Readers</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6: SETTINGS SECTION -->
+      <div id="admin-view-settings" class="hidden space-y-6">
+        <div class="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-6">
+          <div>
+            <h3 class="font-cinzel text-xl font-bold text-amber-200">System & Platform Controls</h3>
+            <p class="text-xs text-amber-200/60">Global configuration parameters for the Enter The Book engine</p>
+          </div>
+
+          <div class="space-y-4 text-xs font-mono">
+            <div class="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-amber-100">Global 3D WebXR Engine</h4>
+                <p class="text-[11px] text-amber-200/50 mt-0.5">Enable high-definition WebXR 3D rendering for all client browsers</p>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">ENABLED</span>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-amber-100">Spatial Audio Synthesizer</h4>
+                <p class="text-[11px] text-amber-200/50 mt-0.5">Stream 3D binaural audio narration for supported audiobooks</p>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">ENABLED</span>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-stone-900/80 border border-stone-800 flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-amber-100">Publisher Self-Service Publishing</h4>
+                <p class="text-[11px] text-amber-200/50 mt-0.5">Allow verified publishers to directly push interactive manuscript updates</p>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">REVIEW REQUIRED</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
   <!-- UI OVERLAY LAYER (HEADER & FOOTER) -->
   <div class="relative z-20 w-full h-full flex flex-col justify-between pointer-events-none">
 
@@ -1616,12 +2267,27 @@
     function updateRoleUI(role) {
       currentRole = role;
       const roleLower = (role || 'User').toLowerCase();
-      const navForPublishers = document.getElementById('nav-for-publishers');
+      const navBtn = document.getElementById('nav-for-publishers');
       
-      if (roleLower === 'user') {
-        if (navForPublishers) navForPublishers.classList.add('hidden');
-      } else {
-        if (navForPublishers) navForPublishers.classList.remove('hidden');
+      if (navBtn) {
+        if (roleLower === 'user') {
+          navBtn.classList.add('hidden');
+        } else if (roleLower === 'admin') {
+          navBtn.classList.remove('hidden');
+          navBtn.setAttribute('onclick', "loginAsRole('Admin')");
+          navBtn.innerHTML = `
+            <i data-lucide="shield" class="w-4 h-4 text-amber-400"></i>
+            <span>For Admin Dashboard</span>
+          `;
+        } else {
+          navBtn.classList.remove('hidden');
+          navBtn.setAttribute('onclick', "loginAsRole('Publisher')");
+          navBtn.innerHTML = `
+            <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-400"></i>
+            <span>For Publishers</span>
+          `;
+        }
+        lucide.createIcons();
       }
 
       const activeRoleLabel = document.getElementById('current-active-role');
@@ -1631,11 +2297,86 @@
       if (avatar) avatar.textContent = role.charAt(0);
     }
 
+    function switchAdminTab(tabName) {
+      const tabs = ['overview', 'books', 'publishers', 'users', 'analytics', 'settings'];
+      tabs.forEach(t => {
+        const viewEl = document.getElementById('admin-view-' + t);
+        const btnEl = document.getElementById('admin-tab-btn-' + t);
+        if (viewEl) {
+          if (t === tabName) {
+            viewEl.classList.remove('hidden');
+          } else {
+            viewEl.classList.add('hidden');
+          }
+        }
+        if (btnEl) {
+          if (t === tabName) {
+            btnEl.className = 'px-4 py-2 rounded-xl text-xs font-cinzel font-bold border border-amber-400/50 bg-amber-500/20 text-amber-300 transition-all flex items-center space-x-2 cursor-pointer';
+          } else {
+            btnEl.className = 'px-4 py-2 rounded-xl text-xs font-cinzel font-bold border border-stone-800 bg-stone-900/60 text-amber-200/70 hover:text-amber-200 hover:border-amber-500/30 transition-all flex items-center space-x-2 cursor-pointer';
+          }
+        }
+      });
+      lucide.createIcons();
+    }
+
+    function filterAdminBooks() {
+      const searchVal = (document.getElementById('admin-books-search')?.value || '').toLowerCase();
+      const statusVal = document.getElementById('admin-books-status-filter')?.value || 'all';
+      const rows = document.querySelectorAll('#admin-books-table tbody tr');
+
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const status = row.getAttribute('data-status') || '';
+
+        const matchesSearch = text.includes(searchVal);
+        const matchesStatus = (statusVal === 'all') || (status === statusVal);
+
+        if (matchesSearch && matchesStatus) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    function filterAdminPublishers() {
+      const searchVal = (document.getElementById('admin-publishers-search')?.value || '').toLowerCase();
+      const rows = document.querySelectorAll('#admin-publishers-table tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchVal)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
+    function filterAdminUsers() {
+      const searchVal = (document.getElementById('admin-users-search')?.value || '').toLowerCase();
+      const rows = document.querySelectorAll('#admin-users-table tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchVal)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+
     function loginAsRole(role) {
       document.getElementById('role-select-modal').classList.add('hidden');
       updateRoleUI(role);
 
       const roleLower = (role || 'User').toLowerCase();
+
+      document.getElementById('publisher-dashboard-view')?.classList.add('hidden');
+      document.getElementById('admin-dashboard-view')?.classList.add('hidden');
+
+      const adminLabel = document.getElementById('admin-active-role-label');
+      if (adminLabel) adminLabel.textContent = role;
 
       if (roleLower === 'publisher') {
         hideVRPanorama();
@@ -1647,8 +2388,19 @@
         document.getElementById('open-book-website-view')?.classList.add('hidden');
 
         document.getElementById('publisher-dashboard-view')?.classList.remove('hidden');
+      } else if (roleLower === 'admin') {
+        hideVRPanorama();
+        document.getElementById('canvas-container')?.classList.add('hidden');
+        document.getElementById('book-click-trigger')?.classList.add('hidden');
+        document.getElementById('carousel-left-arrow')?.classList.add('hidden');
+        document.getElementById('carousel-right-arrow')?.classList.add('hidden');
+        document.getElementById('main-footer')?.classList.add('hidden');
+        document.getElementById('open-book-website-view')?.classList.add('hidden');
+
+        document.getElementById('admin-dashboard-view')?.classList.remove('hidden');
+        switchAdminTab('overview');
+        lucide.createIcons();
       } else {
-        document.getElementById('publisher-dashboard-view')?.classList.add('hidden');
         goToHome();
       }
     }
@@ -1663,14 +2415,15 @@
       if (coverPivot) coverPivot.rotation.y = 0;
 
       hideVRPanorama();
-      document.getElementById('publisher-dashboard-view').classList.add('hidden');
-      document.getElementById('canvas-container').classList.remove('hidden');
-      document.getElementById('book-click-trigger').classList.remove('hidden');
-      document.getElementById('carousel-left-arrow').classList.remove('hidden');
-      document.getElementById('carousel-right-arrow').classList.remove('hidden');
-      document.getElementById('main-footer').classList.remove('hidden');
+      document.getElementById('publisher-dashboard-view')?.classList.add('hidden');
+      document.getElementById('admin-dashboard-view')?.classList.add('hidden');
+      document.getElementById('canvas-container')?.classList.remove('hidden');
+      document.getElementById('book-click-trigger')?.classList.remove('hidden');
+      document.getElementById('carousel-left-arrow')?.classList.remove('hidden');
+      document.getElementById('carousel-right-arrow')?.classList.remove('hidden');
+      document.getElementById('main-footer')?.classList.remove('hidden');
 
-      document.getElementById('open-book-website-view').classList.add('hidden');
+      document.getElementById('open-book-website-view')?.classList.add('hidden');
       isTransitioning = false;
     }
 
