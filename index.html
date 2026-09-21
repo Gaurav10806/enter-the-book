@@ -131,7 +131,7 @@
 
   <!-- CLICKABLE TRIGGER HOTSPOT OVER THE 3D BOOK -->
   <div id="book-click-trigger" 
-       class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 w-[300px] h-[400px] cursor-pointer rounded-2xl group flex flex-col items-center justify-center pointer-events-auto">
+       class="absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2 z-30 w-[300px] h-[400px] cursor-pointer rounded-2xl group flex flex-col items-center justify-end pb-24 pointer-events-auto">
     <div class="glass-panel px-5 py-2.5 rounded-full border border-amber-400/60 shadow-2xl flex items-center space-x-2 text-xs text-amber-200 group-hover:scale-110 transition-all duration-300 animate-bounce">
       <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
       <span class="font-semibold">CLICK BOOK TO ENTER STORY</span>
@@ -393,7 +393,93 @@
 
       <nav class="hidden md:flex items-center space-x-8 text-sm font-medium">
         <button onclick="goToHome()" class="text-amber-300 border-b-2 border-amber-400 pb-1 font-semibold">Library</button>
-        <a href="#" onclick="goToHome()" class="text-amber-100/70 hover:text-amber-300 transition-colors">Experiences</a>
+
+        <!-- EXPERIENCES DROPDOWN CONTAINER -->
+        <div id="experiences-nav-container" class="relative group" onmouseenter="showExperiencesMenu()" onmouseleave="hideExperiencesMenu()">
+          <button id="experiences-nav-btn" onclick="toggleExperiencesMenu()" class="text-amber-100/70 hover:text-amber-300 transition-colors py-2 flex items-center space-x-1 font-semibold focus:outline-none">
+            <span>Experiences</span>
+            <i id="experiences-chevron" data-lucide="chevron-down" class="w-3.5 h-3.5 text-amber-400/70 transition-transform duration-200"></i>
+          </button>
+          
+          <!-- Dropdown Wrapper: Zero position shift, seamless top hover bridge -->
+          <div id="experiences-dropdown" class="absolute left-0 top-full pt-1.5 w-80 opacity-0 pointer-events-none transition-opacity duration-200 z-50 group-hover:opacity-100 group-hover:pointer-events-auto">
+            <!-- Invisible Seamless Hover Bridge -->
+            <div class="absolute -top-3 left-0 w-full h-5 pointer-events-auto"></div>
+
+            <div class="bg-[#0c0a09]/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-2.5 shadow-2xl shadow-black/90 pointer-events-auto relative z-10">
+              <div class="px-3 py-2 border-b border-amber-500/15 mb-1.5 flex items-center justify-between">
+                <div>
+                  <p class="font-cinzel text-[10px] font-bold uppercase tracking-widest text-amber-400/90">The Missing Nation</p>
+                  <p class="text-[11px] text-amber-200/50">5 Available Experiences</p>
+                </div>
+                <span class="text-[10px] font-cinzel text-amber-400/60 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">1982 Lahore</span>
+              </div>
+              
+              <div class="space-y-1">
+                <button onclick="openExperienceNav('visualtexts')" class="w-full text-left p-2.5 rounded-xl hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 transition-all flex items-start space-x-3 group/item cursor-pointer">
+                  <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 group-hover/item:scale-110 group-hover/item:border-amber-400 transition-transform flex-shrink-0 mt-0.5">
+                    <span class="text-xs">✦</span>
+                  </div>
+                  <div>
+                    <div class="font-cinzel text-xs font-bold text-amber-200 group-hover/item:text-amber-100 flex items-center space-x-1.5">
+                      <span>Interactive Story</span>
+                    </div>
+                    <div class="text-[11px] text-amber-200/60 leading-tight mt-0.5">Make choices and shape the story</div>
+                  </div>
+                </button>
+
+                <button onclick="openExperienceNav('arvrvideo')" class="w-full text-left p-2.5 rounded-xl hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 transition-all flex items-start space-x-3 group/item cursor-pointer">
+                  <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 group-hover/item:scale-110 group-hover/item:border-amber-400 transition-transform flex-shrink-0 mt-0.5">
+                    <span class="text-xs">◉</span>
+                  </div>
+                  <div>
+                    <div class="font-cinzel text-xs font-bold text-amber-200 group-hover/item:text-amber-100 flex items-center space-x-1.5">
+                      <span>3D World</span>
+                    </div>
+                    <div class="text-[11px] text-amber-200/60 leading-tight mt-0.5">Explore the world of the book</div>
+                  </div>
+                </button>
+
+                <button onclick="openExperienceNav('characters')" class="w-full text-left p-2.5 rounded-xl hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 transition-all flex items-start space-x-3 group/item cursor-pointer">
+                  <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 group-hover/item:scale-110 group-hover/item:border-amber-400 transition-transform flex-shrink-0 mt-0.5">
+                    <span class="text-xs">♙</span>
+                  </div>
+                  <div>
+                    <div class="font-cinzel text-xs font-bold text-amber-200 group-hover/item:text-amber-100 flex items-center space-x-1.5">
+                      <span>Meet the Characters</span>
+                    </div>
+                    <div class="text-[11px] text-amber-200/60 leading-tight mt-0.5">Discover characters and their stories</div>
+                  </div>
+                </button>
+
+                <button onclick="openExperienceNav('map')" class="w-full text-left p-2.5 rounded-xl hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 transition-all flex items-start space-x-3 group/item cursor-pointer">
+                  <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 group-hover/item:scale-110 group-hover/item:border-amber-400 transition-transform flex-shrink-0 mt-0.5">
+                    <span class="text-xs">◈</span>
+                  </div>
+                  <div>
+                    <div class="font-cinzel text-xs font-bold text-amber-200 group-hover/item:text-amber-100 flex items-center space-x-1.5">
+                      <span>Story Map</span>
+                    </div>
+                    <div class="text-[11px] text-amber-200/60 leading-tight mt-0.5">Explore important locations</div>
+                  </div>
+                </button>
+
+                <button onclick="openExperienceNav('audiobook')" class="w-full text-left p-2.5 rounded-xl hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 transition-all flex items-start space-x-3 group/item cursor-pointer">
+                  <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 group-hover/item:scale-110 group-hover/item:border-amber-400 transition-transform flex-shrink-0 mt-0.5">
+                    <span class="text-xs">♪</span>
+                  </div>
+                  <div>
+                    <div class="font-cinzel text-xs font-bold text-amber-200 group-hover/item:text-amber-100 flex items-center space-x-1.5">
+                      <span>Audio Experience</span>
+                    </div>
+                    <div class="text-[11px] text-amber-200/60 leading-tight mt-0.5">Listen to the world of the book</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <button onclick="loginAsRole('Publisher')" class="text-amber-100/70 hover:text-amber-300 transition-colors font-semibold flex items-center space-x-1">
           <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-400"></i>
           <span>For Publishers</span>
@@ -420,26 +506,8 @@
 
     <!-- MAIN MIDDLE CONTENT -->
     <div class="flex-1 flex justify-between items-center px-8 relative">
-      <div class="glass-panel py-6 px-3 rounded-2xl flex flex-col space-y-6 items-center pointer-events-auto border border-amber-500/30 shadow-2xl">
-        <button onclick="goToHome()" class="group flex flex-col items-center p-3 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300">
-          <i data-lucide="home" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
-          <span class="text-[10px] font-medium">Library</span>
-        </button>
-        <button class="group flex flex-col items-center p-3 rounded-xl hover:bg-amber-500/10 text-amber-200/60 hover:text-amber-300 transition-all">
-          <i data-lucide="compass" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
-          <span class="text-[10px] font-medium">Explore</span>
-        </button>
-        <button class="group flex flex-col items-center p-3 rounded-xl hover:bg-amber-500/10 text-amber-200/60 hover:text-amber-300 transition-all">
-          <i data-lucide="library" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
-          <span class="text-[10px] font-medium">My Shelf</span>
-        </button>
-        <button onclick="animateBookOpeningAndTransition(); selectExperience('visualtexts');" class="group flex flex-col items-center p-3 rounded-xl hover:bg-amber-500/10 text-amber-200/60 hover:text-amber-300 transition-all relative">
-          <i data-lucide="box" class="w-5 h-5 mb-1 group-hover:scale-110 transition-transform"></i>
-          <span class="text-[10px] font-medium">3D Scenes</span>
-        </button>
-      </div>
 
-      <div id="carousel-left-arrow" class="absolute left-1/4 top-1/2 -translate-y-1/2 pointer-events-auto hidden md:block z-20">
+      <div id="carousel-left-arrow" class="absolute left-12 top-1/2 -translate-y-1/2 pointer-events-auto hidden md:block z-20">
         <button id="btn-prev-book" class="p-4 rounded-full glass-button text-amber-200 shadow-2xl">
           <i data-lucide="chevron-left" class="w-6 h-6"></i>
         </button>
@@ -1827,6 +1895,81 @@
       `;
 
       lucide.createIcons();
+    }
+
+    let experiencesMenuTimer = null;
+
+    function showExperiencesMenu() {
+      if (experiencesMenuTimer) {
+        clearTimeout(experiencesMenuTimer);
+        experiencesMenuTimer = null;
+      }
+      const dropdown = document.getElementById('experiences-dropdown');
+      const chevron = document.getElementById('experiences-chevron');
+      if (dropdown) {
+        dropdown.classList.remove('opacity-0', 'pointer-events-none');
+        dropdown.classList.add('opacity-100', 'pointer-events-auto');
+      }
+      if (chevron) {
+        chevron.classList.add('rotate-180');
+      }
+    }
+
+    function hideExperiencesMenu(immediate = false) {
+      if (experiencesMenuTimer) clearTimeout(experiencesMenuTimer);
+      const closeMenu = () => {
+        const dropdown = document.getElementById('experiences-dropdown');
+        const chevron = document.getElementById('experiences-chevron');
+        if (dropdown) {
+          dropdown.classList.add('opacity-0', 'pointer-events-none');
+          dropdown.classList.remove('opacity-100', 'pointer-events-auto');
+        }
+        if (chevron) {
+          chevron.classList.remove('rotate-180');
+        }
+      };
+
+      if (immediate) {
+        closeMenu();
+      } else {
+        experiencesMenuTimer = setTimeout(closeMenu, 200);
+      }
+    }
+
+    function toggleExperiencesMenu() {
+      const dropdown = document.getElementById('experiences-dropdown');
+      if (dropdown && dropdown.classList.contains('opacity-100')) {
+        hideExperiencesMenu(true);
+      } else {
+        showExperiencesMenu();
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      const container = document.getElementById('experiences-nav-container');
+      if (container && !container.contains(e.target)) {
+        hideExperiencesMenu(true);
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        hideExperiencesMenu(true);
+      }
+    });
+
+    function openExperienceNav(type) {
+      hideExperiencesMenu(true);
+      const canvasContainer = document.getElementById('canvas-container');
+      if (canvasContainer && !canvasContainer.classList.contains('hidden')) {
+        animateBookOpeningAndTransition();
+      } else {
+        const detailView = document.getElementById('view-experience-detail');
+        const overviewView = document.getElementById('view-cards-overview');
+        if (detailView) detailView.classList.remove('hidden');
+        if (overviewView) overviewView.classList.add('hidden');
+      }
+      selectExperience(type);
     }
 
     function selectExperience(type) {
