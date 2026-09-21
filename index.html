@@ -10,8 +10,9 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Three.js CDN -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- OrbitControls -->
+  <!-- OrbitControls & GLTFLoader -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <!-- Google Fonts: Cinzel, Playfair Display & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,12 +25,27 @@
       color: #e5e7eb;
       overflow-x: hidden;
     }
-    .no-scrollbar::-webkit-scrollbar {
-      display: none;
+    /* FUNCTIONAL CINEMATIC SCROLLBAR */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
     }
-    .no-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+    ::-webkit-scrollbar-track {
+      background: rgba(18, 14, 11, 0.6);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(212, 163, 89, 0.4);
+      border-radius: 9999px;
+      border: 1px solid rgba(212, 163, 89, 0.2);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(245, 197, 107, 0.8);
+    }
+
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(212, 163, 89, 0.5) rgba(18, 14, 11, 0.6);
     }
     .font-cinzel {
       font-family: 'Cinzel', serif;
@@ -412,7 +428,7 @@
       </div>
 
       <!-- ADMIN NAVIGATION TABS -->
-      <div class="flex items-center space-x-2 border-b border-stone-800 pb-3 overflow-x-auto no-scrollbar">
+      <div class="flex items-center space-x-2 border-b border-stone-800 pb-3 overflow-x-auto">
         <button id="admin-tab-btn-overview" onclick="switchAdminTab('overview')" class="px-4 py-2 rounded-xl text-xs font-cinzel font-bold border border-amber-400/50 bg-amber-500/20 text-amber-300 transition-all flex items-center space-x-2">
           <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
           <span>Dashboard Overview</span>
@@ -1171,7 +1187,7 @@
             </div>
 
             <!-- Notification List Container -->
-            <div id="notifications-list-container" class="space-y-1.5 max-h-80 overflow-y-auto no-scrollbar">
+            <div id="notifications-list-container" class="space-y-1.5 max-h-80 overflow-y-auto pr-1">
               <!-- Dynamically populated via renderNotifications() -->
             </div>
           </div>
@@ -1314,7 +1330,7 @@
           </div>
 
           <!-- DYNAMIC OVERLAY SCREENS FOR INTERACTIVE STORY -->
-          <div id="view-experience-detail" class="hidden pointer-events-none">
+          <div id="view-experience-detail" class="hidden pointer-events-auto">
             <div class="flex items-center justify-between mb-4 pointer-events-auto">
               <button onclick="showOverviewCards()" class="text-xs font-bold text-amber-300 hover:text-amber-100 flex items-center space-x-1 glass-button px-4 py-2 rounded-xl border border-amber-400/40 shadow-2xl">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
@@ -1330,7 +1346,7 @@
                 <span class="text-amber-400/80 font-bold">SCENE 01 / 06</span>
               </div>
             </div>
-            <div id="detail-dynamic-content" class="pointer-events-none"></div>
+            <div id="detail-dynamic-content" class="pointer-events-auto"></div>
           </div>
 
         </div>
@@ -2207,6 +2223,23 @@
         sub.style.opacity = '0';
         sub.classList.add('hidden');
       }
+
+      // 5. Cancel active 3D character animation loop & controls
+      if (typeof characterAnimFrameId !== 'undefined' && characterAnimFrameId) {
+        cancelAnimationFrame(characterAnimFrameId);
+        characterAnimFrameId = null;
+      }
+      if (typeof character3dControls !== 'undefined' && character3dControls) {
+        try { character3dControls.dispose(); } catch (e) {}
+        character3dControls = null;
+      }
+      if (typeof characterMixer !== 'undefined' && characterMixer) {
+        try { characterMixer.stopAllAction(); } catch (e) {}
+        characterMixer = null;
+      }
+      if (typeof onResizeCharacter3D === 'function') {
+        window.removeEventListener('resize', onResizeCharacter3D);
+      }
     }
 
     function hideVRPanorama() {
@@ -2569,6 +2602,106 @@
       lucide.createIcons();
     }
 
+    function renderARVRVideoPlayer() {
+      stopAllMediaAndAudio();
+      hideVRPanorama();
+
+      const detailView = document.getElementById('view-experience-detail');
+      const overviewView = document.getElementById('view-cards-overview');
+      const contentContainer = document.getElementById('detail-dynamic-content');
+
+      if (overviewView) overviewView.classList.add('hidden');
+      if (detailView) {
+        detailView.classList.remove('hidden', 'pointer-events-none');
+        detailView.classList.add('pointer-events-auto');
+      }
+      if (contentContainer) {
+        contentContainer.classList.remove('pointer-events-none');
+        contentContainer.classList.add('pointer-events-auto');
+      }
+
+      contentContainer.innerHTML = `
+        <div class="relative w-full min-h-[620px] rounded-3xl overflow-hidden glass-panel border border-amber-500/30 flex flex-col justify-between p-4 md:p-6 bg-gradient-to-b from-[#140f0c] via-[#0b0806] to-[#050403] shadow-2xl pointer-events-auto">
+          
+          <!-- TOP CONTROL BAR -->
+          <div class="flex items-center justify-between z-20 pb-3 border-b border-amber-500/20 gap-3 pointer-events-auto">
+            <button onclick="showOverviewCards()" class="glass-button px-4 py-2 rounded-full text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/40 hover:scale-105 transition-all">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>Back to Dimensions</span>
+            </button>
+
+            <div class="flex items-center space-x-2">
+              <span class="font-cinzel text-xs font-bold uppercase tracking-widest text-amber-400/90 bg-amber-500/10 px-3.5 py-1 rounded-full border border-amber-500/20 flex items-center space-x-1.5">
+                <i data-lucide="glasses" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>AR/VR 360° Video Reenactment</span>
+              </span>
+            </div>
+
+            <button onclick="toggleVideoVRFullscreen()" class="glass-button px-4 py-2 rounded-full text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/40 hover:border-amber-400 hover:scale-105 transition-all">
+              <i data-lucide="maximize" class="w-4 h-4 text-amber-400"></i>
+              <span>FULLSCREEN / VR</span>
+            </button>
+          </div>
+
+          <!-- MAIN VIDEO VIEWER SECTION -->
+          <div class="my-4 relative w-full h-[400px] md:h-[460px] rounded-2xl overflow-hidden border border-amber-500/30 shadow-2xl bg-black group pointer-events-auto flex items-center justify-center">
+            
+            <video id="arvr-video-player" class="w-full h-full object-cover rounded-2xl" src="/this_is_how_the_scenes_are_sup.mp4" poster="/vr_interrogation.jpg" controls autoplay loop playsinline></video>
+
+            <!-- SPATIAL & VR BADGES OVERLAY -->
+            <div class="absolute top-4 left-4 glass-panel px-3 py-1.5 rounded-full text-[11px] font-mono text-amber-200/90 border border-amber-500/30 flex items-center space-x-2 pointer-events-none shadow-lg z-20">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>360° SPATIAL AUDIO • 4K VR 60FPS</span>
+            </div>
+          </div>
+
+          <!-- VIDEO DETAILS & CONTROLS -->
+          <div class="pt-3 border-t border-amber-500/20 flex flex-col md:flex-row items-center justify-between gap-4 z-20 pointer-events-auto">
+            <div>
+              <h3 class="font-cinzel text-lg font-bold text-amber-100 glow-gold">The Missing Nation — 360° Cinematic Experience</h3>
+              <p class="text-xs text-amber-300/70 mt-0.5">Lahore Security Bureau & Eastern Region Reconnaissance (1982 Reenactment)</p>
+            </div>
+
+            <div class="flex items-center space-x-3">
+              <button onclick="playArVrVideo()" class="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-200 text-xs font-cinzel font-bold hover:bg-amber-500/30 transition-all flex items-center space-x-2">
+                <i data-lucide="play" class="w-4 h-4 text-amber-400"></i>
+                <span>PLAY SCENE</span>
+              </button>
+              <button onclick="pauseArVrVideo()" class="px-4 py-2 rounded-xl bg-stone-900/80 border border-stone-700 text-amber-200/80 text-xs font-cinzel font-bold hover:bg-stone-800 transition-all flex items-center space-x-2">
+                <i data-lucide="pause" class="w-4 h-4 text-amber-400"></i>
+                <span>PAUSE</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      `;
+
+      lucide.createIcons();
+    }
+
+    function toggleVideoVRFullscreen() {
+      const video = document.getElementById('arvr-video-player');
+      if (!video) return;
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else if (video.requestFullscreen) {
+        video.requestFullscreen();
+      } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+      }
+    }
+
+    function playArVrVideo() {
+      const video = document.getElementById('arvr-video-player');
+      if (video) video.play();
+    }
+
+    function pauseArVrVideo() {
+      const video = document.getElementById('arvr-video-player');
+      if (video) video.pause();
+    }
+
     function renderAudioBookPlayer() {
       hideVRPanorama();
       const detailView = document.getElementById('view-experience-detail');
@@ -2674,29 +2807,815 @@
       lucide.createIcons();
     }
 
-    function renderARVRVideoPlayer() {
-      showVRPanorama();
+    // ----------------------------------------------------
+    // MEET THE CHARACTERS: 3D INTERACTIVE CHARACTER VIEWER
+    // ----------------------------------------------------
+    let character3dScene = null;
+    let character3dCamera = null;
+    let character3dRenderer = null;
+    let character3dControls = null;
+    let characterAnimFrameId = null;
+    let characterMeshGroup = null;
+    let characterPortfolioMesh = null;
+    let isCharacterResetting = false;
+
+    function createMrityunjay3DModel() {
+      const group = new THREE.Group();
+
+      // ----------------------------------------------------
+      // HIGH-QUALITY MATERIALS (Matching 1982 Reference Image)
+      // ----------------------------------------------------
+      const skinMat = new THREE.MeshStandardMaterial({ color: 0xd49b73, roughness: 0.55, metalness: 0.05 });
+      const lipMat = new THREE.MeshStandardMaterial({ color: 0xb5785a, roughness: 0.6 });
+      const eyeWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf4f4f4, roughness: 0.2 });
+      const irisMat = new THREE.MeshStandardMaterial({ color: 0x22150c, roughness: 0.3 });
+      
+      const jacketMat = new THREE.MeshStandardMaterial({ color: 0x98623e, roughness: 0.65, metalness: 0.05 }); // Warm camel/tan wool
+      const jacketLapelMat = new THREE.MeshStandardMaterial({ color: 0x865434, roughness: 0.6, metalness: 0.05 });
+      const shirtMat = new THREE.MeshStandardMaterial({ color: 0xf2ece1, roughness: 0.7 }); // Light cream formal shirt
+      const tieMat = new THREE.MeshStandardMaterial({ color: 0x2a2e33, roughness: 0.55 }); // Dark charcoal/slate tie
+      const trouserMat = new THREE.MeshStandardMaterial({ color: 0x24201e, roughness: 0.7 }); // Dark charcoal tailored trousers
+      const beltMat = new THREE.MeshStandardMaterial({ color: 0x361e12, roughness: 0.4 }); // Dark brown leather belt
+      const shoeMat = new THREE.MeshStandardMaterial({ color: 0x4a2914, roughness: 0.25, metalness: 0.2 }); // Polished brown oxfords
+      const shoeSoleMat = new THREE.MeshStandardMaterial({ color: 0x181412, roughness: 0.8 });
+      
+      const satchelMat = new THREE.MeshStandardMaterial({ color: 0x422614, roughness: 0.35, metalness: 0.15 }); // Vintage dark leather
+      const satchelStrapMat = new THREE.MeshStandardMaterial({ color: 0x381f10, roughness: 0.4 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.25, metalness: 0.85 }); // Brass/gold hardware
+      const hairMat = new THREE.MeshStandardMaterial({ color: 0x18120e, roughness: 0.85 }); // Wavy dark hair
+      const glassesFrameMat = new THREE.MeshStandardMaterial({ color: 0x1e1d21, roughness: 0.3, metalness: 0.8 }); // Dark metallic glasses
+      const glassesLensMat = new THREE.MeshStandardMaterial({ color: 0xffffff, opacity: 0.25, transparent: true, roughness: 0.1 });
+
+      // ----------------------------------------------------
+      // 1. PEDESTAL DISPLAY BASE
+      // ----------------------------------------------------
+      const platformGeo = new THREE.CylinderGeometry(1.15, 1.3, 0.12, 48);
+      const platformMat = new THREE.MeshStandardMaterial({ color: 0x161210, roughness: 0.5, metalness: 0.4 });
+      const platformMesh = new THREE.Mesh(platformGeo, platformMat);
+      platformMesh.position.y = -0.06;
+      platformMesh.receiveShadow = true;
+      group.add(platformMesh);
+
+      const ringGeo = new THREE.TorusGeometry(1.16, 0.018, 16, 64);
+      const ringMesh = new THREE.Mesh(ringGeo, goldMat);
+      ringMesh.rotation.x = Math.PI / 2;
+      ringMesh.position.y = 0.001;
+      group.add(ringMesh);
+
+      // ----------------------------------------------------
+      // 2. FOOTWEAR (Detailed Oxfords with Soles & Heels)
+      // ----------------------------------------------------
+      function createOxfordShoe(isLeft) {
+        const shoeGroup = new THREE.Group();
+        
+        // Sole
+        const sole = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.04, 0.44), shoeSoleMat);
+        sole.position.set(0, 0.02, 0.02);
+        sole.castShadow = true;
+        shoeGroup.add(sole);
+
+        // Main Leather Body
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.12, 0.4), shoeMat);
+        body.position.set(0, 0.08, 0.02);
+        body.castShadow = true;
+        shoeGroup.add(body);
+
+        // Rounded Toe Cap
+        const toe = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.095, 0.12, 16), shoeMat);
+        toe.rotation.x = Math.PI / 2;
+        toe.position.set(0, 0.07, 0.16);
+        shoeGroup.add(toe);
+
+        // Stacked Heel
+        const heel = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.05, 0.14), shoeSoleMat);
+        heel.position.set(0, 0.025, -0.11);
+        shoeGroup.add(heel);
+
+        shoeGroup.position.set(isLeft ? -0.22 : 0.22, 0, 0.02);
+        if (!isLeft) shoeGroup.rotation.y = -0.08;
+        else shoeGroup.rotation.y = 0.05;
+
+        return shoeGroup;
+      }
+
+      group.add(createOxfordShoe(true));
+      group.add(createOxfordShoe(false));
+
+      // ----------------------------------------------------
+      // 3. TROUSERS & LOWER BODY (Tailored Fit & Pleats)
+      // ----------------------------------------------------
+      // Left Leg
+      const leftLegUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.125, 0.48, 20), trouserMat);
+      leftLegUpper.position.set(-0.21, 0.68, 0.01);
+      leftLegUpper.castShadow = true;
+      group.add(leftLegUpper);
+
+      const leftLegLower = new THREE.Mesh(new THREE.CylinderGeometry(0.125, 0.115, 0.44, 20), trouserMat);
+      leftLegLower.position.set(-0.22, 0.26, 0.02);
+      leftLegLower.castShadow = true;
+      group.add(leftLegLower);
+
+      // Right Leg (Slightly relaxed knee angle)
+      const rightLegUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.125, 0.48, 20), trouserMat);
+      rightLegUpper.position.set(0.21, 0.68, 0.01);
+      rightLegUpper.rotation.z = -0.04;
+      rightLegUpper.castShadow = true;
+      group.add(rightLegUpper);
+
+      const rightLegLower = new THREE.Mesh(new THREE.CylinderGeometry(0.125, 0.115, 0.44, 20), trouserMat);
+      rightLegLower.position.set(0.22, 0.26, 0.02);
+      rightLegLower.castShadow = true;
+      group.add(rightLegLower);
+
+      // Hips / Pelvic Waist
+      const hips = new THREE.Mesh(new THREE.CylinderGeometry(0.29, 0.27, 0.24, 24), trouserMat);
+      hips.position.set(0, 0.98, 0);
+      hips.castShadow = true;
+      group.add(hips);
+
+      // Leather Belt & Brass Buckle
+      const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.295, 0.05, 24), beltMat);
+      belt.position.set(0, 1.08, 0);
+      group.add(belt);
+
+      const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.04), goldMat);
+      buckle.position.set(0, 1.08, 0.29);
+      group.add(buckle);
+
+      // ----------------------------------------------------
+      // 4. SHIRT, TIE & CAMEL/TAN SUIT JACKET
+      // ----------------------------------------------------
+      // Inner Formal Shirt
+      const shirtTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.29, 0.65, 24), shirtMat);
+      shirtTorso.position.set(0, 1.42, 0);
+      group.add(shirtTorso);
+
+      // Shirt Collar
+      const collarLeft = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.04), shirtMat);
+      collarLeft.position.set(-0.09, 1.78, 0.15);
+      collarLeft.rotation.z = -0.3;
+      collarLeft.rotation.y = 0.2;
+      group.add(collarLeft);
+
+      const collarRight = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 0.04), shirtMat);
+      collarRight.position.set(0.09, 1.78, 0.15);
+      collarRight.rotation.z = 0.3;
+      collarRight.rotation.y = -0.2;
+      group.add(collarRight);
+
+      // Charcoal Tie (Knot & Drop)
+      const tieKnot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.07, 0.05), tieMat);
+      tieKnot.position.set(0, 1.76, 0.17);
+      group.add(tieKnot);
+
+      const tieDrop = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.55, 0.03), tieMat);
+      tieDrop.position.set(0, 1.42, 0.18);
+      group.add(tieDrop);
+
+      // Main Camel/Tan Suit Jacket Body
+      const jacketBody = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.33, 0.72, 24), jacketMat);
+      jacketBody.position.set(0, 1.42, -0.02);
+      jacketBody.castShadow = true;
+      group.add(jacketBody);
+
+      // Left & Right Jacket Front Flaps (Open front displaying shirt & tie)
+      const jacketLeftFront = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.68, 0.08), jacketMat);
+      jacketLeftFront.position.set(-0.20, 1.40, 0.14);
+      jacketLeftFront.rotation.y = -0.25;
+      group.add(jacketLeftFront);
+
+      const jacketRightFront = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.68, 0.08), jacketMat);
+      jacketRightFront.position.set(0.20, 1.40, 0.14);
+      jacketRightFront.rotation.y = 0.25;
+      group.add(jacketRightFront);
+
+      // Jacket Lapels
+      const lapelLeft = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.42, 0.04), jacketLapelMat);
+      lapelLeft.position.set(-0.13, 1.56, 0.19);
+      lapelLeft.rotation.z = -0.18;
+      group.add(lapelLeft);
+
+      const lapelRight = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.42, 0.04), jacketLapelMat);
+      lapelRight.position.set(0.13, 1.56, 0.19);
+      lapelRight.rotation.z = 0.18;
+      group.add(lapelRight);
+
+      // Chest Pocket & Side Flap Pockets
+      const chestPocket = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 0.03), jacketMat);
+      chestPocket.position.set(-0.18, 1.62, 0.18);
+      group.add(chestPocket);
+
+      const sidePocketL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.04), jacketMat);
+      sidePocketL.position.set(-0.24, 1.18, 0.15);
+      group.add(sidePocketL);
+
+      const sidePocketR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.04), jacketMat);
+      sidePocketR.position.set(0.24, 1.18, 0.15);
+      group.add(sidePocketR);
+
+      // Jacket Buttons
+      const button1 = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.02, 12), goldMat);
+      button1.rotation.x = Math.PI / 2;
+      button1.position.set(-0.06, 1.28, 0.21);
+      group.add(button1);
+
+      // ----------------------------------------------------
+      // 5. ARMS & HANDS WITH DETAILED FINGERS
+      // ----------------------------------------------------
+      function createHand(isLeft) {
+        const handGroup = new THREE.Group();
+        
+        // Palm
+        const palm = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.1, 0.04), skinMat);
+        handGroup.add(palm);
+
+        // 4 Fingers
+        for (let i = 0; i < 4; i++) {
+          const finger = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.01, 0.08, 8), skinMat);
+          finger.position.set(-0.03 + i * 0.02, -0.08, 0);
+          handGroup.add(finger);
+        }
+        // Thumb
+        const thumb = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.011, 0.06, 8), skinMat);
+        thumb.position.set(isLeft ? 0.045 : -0.045, -0.02, 0.01);
+        thumb.rotation.z = isLeft ? -0.5 : 0.5;
+        handGroup.add(thumb);
+
+        return handGroup;
+      }
+
+      // Left Arm (Relaxed at side)
+      const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), jacketMat);
+      shoulderL.position.set(-0.39, 1.72, 0);
+      group.add(shoulderL);
+
+      const armUpperL = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.09, 0.42, 16), jacketMat);
+      armUpperL.position.set(-0.43, 1.48, 0);
+      armUpperL.rotation.z = 0.12;
+      group.add(armUpperL);
+
+      const armLowerL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.075, 0.40, 16), jacketMat);
+      armLowerL.position.set(-0.45, 1.10, 0.02);
+      armLowerL.rotation.z = 0.08;
+      group.add(armLowerL);
+
+      const handL = createHand(true);
+      handL.position.set(-0.46, 0.86, 0.02);
+      group.add(handL);
+
+      // Right Arm (Bent elbow holding satchel strap)
+      const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), jacketMat);
+      shoulderR.position.set(0.39, 1.72, 0);
+      group.add(shoulderR);
+
+      const armUpperR = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.09, 0.42, 16), jacketMat);
+      armUpperR.position.set(0.42, 1.50, 0.04);
+      armUpperR.rotation.z = -0.15;
+      armUpperR.rotation.x = 0.25;
+      group.add(armUpperR);
+
+      const armLowerR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.075, 0.38, 16), jacketMat);
+      armLowerR.position.set(0.36, 1.18, 0.20);
+      armLowerR.rotation.x = 0.75;
+      armLowerR.rotation.y = -0.3;
+      group.add(armLowerR);
+
+      const handR = createHand(false);
+      handR.position.set(0.30, 1.05, 0.33);
+      handR.rotation.x = 0.4;
+      group.add(handR);
+
+      // ----------------------------------------------------
+      // 6. VINTAGE LEATHER MESSENGER SATCHEL & STRAP
+      // ----------------------------------------------------
+      const satchelGroup = new THREE.Group();
+      
+      // Main Leather Pouch
+      const satchelBody = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.38, 0.30), satchelMat);
+      satchelGroup.add(satchelBody);
+
+      // Front Flap
+      const satchelFlap = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.22, 0.31), satchelMat);
+      satchelFlap.position.set(0.01, 0.08, 0);
+      satchelGroup.add(satchelFlap);
+
+      // Dual Brass Buckles
+      const buckle1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 0.04), goldMat);
+      buckle1.position.set(0.06, -0.02, -0.09);
+      satchelGroup.add(buckle1);
+
+      const buckle2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.05, 0.04), goldMat);
+      buckle2.position.set(0.06, -0.02, 0.09);
+      satchelGroup.add(buckle2);
+
+      satchelGroup.position.set(0.38, 1.05, 0.02);
+      satchelGroup.rotation.y = 0.15;
+      group.add(satchelGroup);
+      characterPortfolioMesh = satchelGroup;
+
+      // Diagonal Shoulder Strap (From Left Shoulder down to Right Hip)
+      const strapMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.15, 16), satchelStrapMat);
+      strapMesh.position.set(0.05, 1.42, 0.10);
+      strapMesh.rotation.z = 0.68;
+      strapMesh.rotation.x = 0.15;
+      group.add(strapMesh);
+
+      // ----------------------------------------------------
+      // 7. ANATOMIC HEAD, FACE & WAVEY 1982 HAIR (Reference Match)
+      // ----------------------------------------------------
+      // Neck
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.11, 0.18, 20), skinMat);
+      neck.position.set(0, 1.86, 0.01);
+      group.add(neck);
+
+      // Cranium / Head Skull
+      const headGroup = new THREE.Group();
+      const skull = new THREE.Mesh(new THREE.SphereGeometry(0.18, 32, 32), skinMat);
+      skull.scale.set(1.0, 1.18, 1.05);
+      skull.position.set(0, 2.10, 0);
+      skull.castShadow = true;
+      headGroup.add(skull);
+
+      // Tapered Jaw & Defined Chin
+      const jaw = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.16, 24), skinMat);
+      jaw.position.set(0, 2.01, 0.03);
+      headGroup.add(jaw);
+
+      const chin = new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 16), skinMat);
+      chin.position.set(0, 1.96, 0.12);
+      headGroup.add(chin);
+
+      // Sculpted 3D Nose
+      const noseBridge = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.09, 0.06), skinMat);
+      noseBridge.position.set(0, 2.10, 0.18);
+      noseBridge.rotation.x = -0.15;
+      headGroup.add(noseBridge);
+
+      const noseTip = new THREE.Mesh(new THREE.SphereGeometry(0.028, 16, 16), skinMat);
+      noseTip.position.set(0, 2.06, 0.205);
+      headGroup.add(noseTip);
+
+      // Expressive Eyes
+      function createEye(isLeft) {
+        const eyeGroup = new THREE.Group();
+        const sclera = new THREE.Mesh(new THREE.SphereGeometry(0.022, 16, 16), eyeWhiteMat);
+        eyeGroup.add(sclera);
+
+        const iris = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 0.005, 12), irisMat);
+        iris.rotation.x = Math.PI / 2;
+        iris.position.z = 0.018;
+        eyeGroup.add(iris);
+
+        eyeGroup.position.set(isLeft ? -0.062 : 0.062, 2.12, 0.165);
+        return eyeGroup;
+      }
+      headGroup.add(createEye(true));
+      headGroup.add(createEye(false));
+
+      // Eyebrows
+      const browL = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.012, 0.02), hairMat);
+      browL.position.set(-0.062, 2.165, 0.175);
+      browL.rotation.z = 0.08;
+      headGroup.add(browL);
+
+      const browR = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.012, 0.02), hairMat);
+      browR.position.set(0.062, 2.165, 0.175);
+      browR.rotation.z = -0.08;
+      headGroup.add(browR);
+
+      // Defined Lips
+      const lips = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.022, 0.02), lipMat);
+      lips.position.set(0, 2.01, 0.17);
+      headGroup.add(lips);
+
+      // Ears
+      const earL = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.05), skinMat);
+      earL.position.set(-0.175, 2.10, 0.02);
+      earL.rotation.y = -0.2;
+      headGroup.add(earL);
+
+      const earR = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.05), skinMat);
+      earR.position.set(0.175, 2.10, 0.02);
+      earR.rotation.y = 0.2;
+      headGroup.add(earR);
+
+      // ----------------------------------------------------
+      // 8. WAVEY 1982 EXECUTIVE HAIRSTYLE (Multi-Strand Mesh)
+      // ----------------------------------------------------
+      const hairGroup = new THREE.Group();
+      
+      // Main Scalp Cap
+      const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.19, 32, 32), hairMat);
+      hairCap.scale.set(1.02, 1.12, 1.05);
+      hairCap.position.set(0, 2.13, -0.01);
+      hairGroup.add(hairCap);
+
+      // Volumetric Wavy Locks (Forehead, Side Part, Ears, Back)
+      const lockData = [
+        // Side part & Top Volume
+        { pos: [-0.08, 2.24, 0.08], rot: [0.2, -0.2, -0.3], sz: [0.14, 0.06, 0.14] },
+        { pos: [0.06, 2.25, 0.07], rot: [0.2, 0.2, 0.2], sz: [0.15, 0.07, 0.15] },
+        { pos: [-0.12, 2.21, 0.10], rot: [0.3, -0.3, -0.4], sz: [0.12, 0.05, 0.12] },
+        { pos: [0.11, 2.22, 0.09], rot: [0.3, 0.3, 0.3], sz: [0.13, 0.06, 0.13] },
+        // Forehead Wavy Bangs
+        { pos: [-0.05, 2.20, 0.15], rot: [0.4, -0.1, -0.2], sz: [0.09, 0.04, 0.08] },
+        { pos: [0.04, 2.20, 0.15], rot: [0.4, 0.1, 0.2], sz: [0.09, 0.04, 0.08] },
+        // Sides & Sideburns
+        { pos: [-0.17, 2.14, 0.06], rot: [0.1, -0.4, -0.5], sz: [0.08, 0.12, 0.10] },
+        { pos: [0.17, 2.14, 0.06], rot: [0.1, 0.4, 0.5], sz: [0.08, 0.12, 0.10] },
+        { pos: [-0.16, 2.05, 0.08], rot: [0.1, 0, 0.1], sz: [0.04, 0.08, 0.05] }, // Left Sideburn
+        { pos: [0.16, 2.05, 0.08], rot: [0.1, 0, -0.1], sz: [0.04, 0.08, 0.05] }, // Right Sideburn
+        // Back of Head Volume
+        { pos: [0, 2.10, -0.14], rot: [-0.3, 0, 0], sz: [0.20, 0.18, 0.12] },
+        { pos: [-0.08, 2.02, -0.12], rot: [-0.4, -0.2, 0], sz: [0.12, 0.14, 0.10] },
+        { pos: [0.08, 2.02, -0.12], rot: [-0.4, 0.2, 0], sz: [0.12, 0.14, 0.10] },
+      ];
+
+      lockData.forEach(ld => {
+        const lock = new THREE.Mesh(new THREE.BoxGeometry(ld.sz[0], ld.sz[1], ld.sz[2]), hairMat);
+        lock.position.set(ld.pos[0], ld.pos[1], ld.pos[2]);
+        lock.rotation.set(ld.rot[0], ld.rot[1], ld.rot[2]);
+        hairGroup.add(lock);
+      });
+
+      headGroup.add(hairGroup);
+
+      // ----------------------------------------------------
+      // 9. DARK METALLIC GLASSES (Reference Match)
+      // ----------------------------------------------------
+      const glassesGroup = new THREE.Group();
+
+      // Left Frame Lens & Rim
+      const rimL = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.007, 12, 24), glassesFrameMat);
+      rimL.position.set(-0.062, 2.12, 0.178);
+      glassesGroup.add(rimL);
+
+      const lensL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.004, 20), glassesLensMat);
+      lensL.rotation.x = Math.PI / 2;
+      lensL.position.set(-0.062, 2.12, 0.178);
+      glassesGroup.add(lensL);
+
+      // Right Frame Lens & Rim
+      const rimR = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.007, 12, 24), glassesFrameMat);
+      rimR.position.set(0.062, 2.12, 0.178);
+      glassesGroup.add(rimR);
+
+      const lensR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.004, 20), glassesLensMat);
+      lensR.rotation.x = Math.PI / 2;
+      lensR.position.set(0.062, 2.12, 0.178);
+      glassesGroup.add(lensR);
+
+      // Bridge across nose
+      const bridge = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.045, 8), glassesFrameMat);
+      bridge.rotation.z = Math.PI / 2;
+      bridge.position.set(0, 2.12, 0.18);
+      glassesGroup.add(bridge);
+
+      // Side Arm Temples extending past ears
+      const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.18, 8), glassesFrameMat);
+      armL.rotation.x = Math.PI / 2;
+      armL.position.set(-0.104, 2.12, 0.09);
+      glassesGroup.add(armL);
+
+      const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.18, 8), glassesFrameMat);
+      armR.rotation.x = Math.PI / 2;
+      armR.position.set(0.104, 2.12, 0.09);
+      glassesGroup.add(armR);
+
+      headGroup.add(glassesGroup);
+
+      group.add(headGroup);
+
+      return group;
+    }
+
+    function renderCharacter3DViewer(characterId = 'mrityunjay') {
+      stopAllMediaAndAudio();
+      hideVRPanorama();
+
       const detailView = document.getElementById('view-experience-detail');
+      const overviewView = document.getElementById('view-cards-overview');
       const contentContainer = document.getElementById('detail-dynamic-content');
 
-      document.getElementById('view-cards-overview').classList.add('hidden');
-      detailView.classList.remove('hidden');
+      if (overviewView) overviewView.classList.add('hidden');
+      if (detailView) {
+        detailView.classList.remove('hidden', 'pointer-events-none');
+        detailView.classList.add('pointer-events-auto');
+      }
+      if (contentContainer) {
+        contentContainer.classList.remove('pointer-events-none');
+        contentContainer.classList.add('pointer-events-auto');
+      }
 
-      // PURE VIDEO ONLY - NO OVERLAY TEXT AS REQUESTED
       contentContainer.innerHTML = `
-        <div class="fixed inset-0 z-50 bg-black flex items-center justify-center">
-          <button onclick="showOverviewCards()" class="absolute top-6 left-6 z-50 glass-button px-5 py-2.5 rounded-full text-xs font-bold text-amber-300 flex items-center space-x-2 border border-amber-400/50 shadow-2xl hover:scale-105 transition-transform">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            <span>Exit AR/VR Video Scene</span>
-          </button>
+        <div class="relative w-full min-h-[620px] rounded-3xl overflow-hidden glass-panel border border-amber-500/30 flex flex-col justify-between p-4 md:p-6 bg-gradient-to-b from-[#140f0c] via-[#0b0806] to-[#050403] shadow-2xl pointer-events-auto">
+          
+          <!-- TOP CONTROL BAR -->
+          <div class="flex items-center justify-between z-20 pb-2 border-b border-amber-500/20 gap-3 pointer-events-auto">
+            <button onclick="showOverviewCards()" class="glass-button px-4 py-2 rounded-full text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/40 hover:scale-105 transition-all">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>Back to Dimensions</span>
+            </button>
 
-          <video autoplay loop controls class="w-full h-full object-cover">
-            <source src="/this_is_how_the_scenes_are_sup.mp4" type="video/mp4">
-          </video>
+            <div class="flex items-center space-x-2">
+              <span class="font-cinzel text-xs font-bold uppercase tracking-widest text-amber-400/90 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+                3D Character Showcase
+              </span>
+            </div>
+
+            <button onclick="resetCharacterCamera()" class="glass-button px-4 py-2 rounded-full text-xs font-semibold text-amber-300 flex items-center space-x-2 border border-amber-400/40 hover:border-amber-400 hover:scale-105 transition-all">
+              <i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-400"></i>
+              <span>RESET VIEW</span>
+            </button>
+          </div>
+
+          <!-- MAIN CONTENT: 3D CANVAS + CHARACTER INFO PANEL -->
+          <div class="flex flex-col lg:flex-row items-stretch gap-6 my-4 z-10 flex-1 pointer-events-auto">
+            
+            <!-- LEFT: 3D STAGE MOUNT -->
+            <div class="w-full lg:w-3/5 h-[420px] lg:h-auto min-h-[400px] relative rounded-2xl overflow-hidden border border-amber-500/25 shadow-2xl bg-stone-950/80 pointer-events-auto">
+              <div id="character-3d-mount" class="w-full h-full cursor-grab active:cursor-grabbing pointer-events-auto"></div>
+              
+              <!-- HINT OVERLAY -->
+              <div class="absolute bottom-4 left-1/2 -translate-x-1/2 glass-panel px-4 py-1.5 rounded-full text-[11px] text-amber-200/80 border border-amber-500/30 flex items-center space-x-2 pointer-events-none shadow-lg z-20">
+                <i data-lucide="move-3d" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Drag to rotate 360° • Scroll to zoom</span>
+              </div>
+            </div>
+
+            <!-- RIGHT: CHARACTER DETAILS PANEL -->
+            <div class="w-full lg:w-2/5 glass-panel p-6 rounded-2xl border border-amber-500/30 flex flex-col justify-between space-y-5 pointer-events-auto">
+              <div class="space-y-4">
+                <div>
+                  <span class="text-[10px] font-mono text-amber-400/90 uppercase tracking-widest bg-amber-500/10 px-2.5 py-0.5 rounded border border-amber-500/20">Shipping Executive</span>
+                  <h2 class="font-cinzel text-3xl font-extrabold text-amber-100 glow-gold mt-1.5">MRITYUNJAY</h2>
+                  <p class="text-xs text-amber-300/70 font-mono mt-0.5">The Missing Nation • 1982 Lahore</p>
+                </div>
+
+                <!-- CONCISE DESCRIPTION -->
+                <div class="border-l-2 border-amber-500/60 pl-3 py-1 bg-amber-500/5 rounded-r-lg">
+                  <p class="text-xs text-amber-200/90 italic leading-relaxed">
+                    "An ordinary professional drawn into the political and revolutionary conflict of a nation that was never partitioned."
+                  </p>
+                </div>
+
+                <!-- KEY METADATA -->
+                <div class="space-y-2.5 text-xs font-mono pt-1">
+                  <div class="flex items-center justify-between p-2.5 rounded-xl bg-stone-900/80 border border-stone-800">
+                    <span class="text-amber-400/80 font-bold uppercase text-[11px]">STORY ROLE</span>
+                    <span class="text-amber-200 font-bold">Central Character</span>
+                  </div>
+
+                  <div class="p-2.5 rounded-xl bg-stone-900/80 border border-stone-800 space-y-1">
+                    <span class="text-amber-400/80 font-bold uppercase text-[11px] block">KEY THEMES</span>
+                    <span class="text-amber-200">Identity • Revolution • Nationhood • Morality</span>
+                  </div>
+
+                  <div class="p-2.5 rounded-xl bg-stone-900/80 border border-stone-800 space-y-1">
+                    <span class="text-amber-400/80 font-bold uppercase text-[11px] block">CHARACTER TRAITS</span>
+                    <span class="text-amber-200/90">Intelligent • Thoughtful • Serious • Reserved • Professional</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- HISTORICAL CONTEXT FOOTNOTE -->
+              <div class="p-3 rounded-xl bg-amber-900/20 border border-amber-500/30 text-[11px] text-amber-200/70 leading-normal">
+                <span class="text-amber-400 font-bold block mb-0.5">📜 1982 Narrative Background</span>
+                A shipping executive with a passion for poetry, caught between ordinary professional stability and the political currents surrounding the alternate-history Lahore Bureau.
+              </div>
+            </div>
+
+          </div>
+
+          <!-- BOTTOM CHARACTER SELECTOR -->
+          <div class="pt-3 border-t border-amber-500/20 flex flex-wrap items-center justify-center gap-3 z-20 pointer-events-auto">
+            <span class="text-xs font-cinzel font-bold text-amber-400/70 mr-2 uppercase tracking-wider">Select Character:</span>
+
+            <button class="px-4 py-2 rounded-xl bg-stone-900/60 border border-stone-800 text-amber-200/40 text-xs font-cinzel font-bold cursor-not-allowed opacity-60 flex items-center space-x-2" disabled title="Aditi coming soon">
+              <i data-lucide="user" class="w-3.5 h-3.5 text-amber-400/40"></i>
+              <span>ADITI</span>
+              <span class="text-[9px] font-mono bg-stone-800 px-2 py-0.5 rounded text-amber-400/50">Coming Soon</span>
+            </button>
+
+            <button class="px-5 py-2 rounded-xl bg-amber-500/20 border border-amber-400 text-amber-200 text-xs font-cinzel font-bold shadow-lg shadow-amber-500/10 flex items-center space-x-2">
+              <i data-lucide="user-check" class="w-4 h-4 text-amber-400"></i>
+              <span>MRITYUNJAY</span>
+              <span class="text-[9px] font-mono bg-amber-500/30 px-2 py-0.5 rounded text-amber-300">ACTIVE 3D</span>
+            </button>
+
+            <button class="px-4 py-2 rounded-xl bg-stone-900/60 border border-stone-800 text-amber-200/40 text-xs font-cinzel font-bold cursor-not-allowed opacity-60 flex items-center space-x-2" disabled title="Sakar Chand Gupta coming soon">
+              <i data-lucide="user" class="w-3.5 h-3.5 text-amber-400/40"></i>
+              <span>SAKAR CHAND GUPTA</span>
+              <span class="text-[9px] font-mono bg-stone-800 px-2 py-0.5 rounded text-amber-400/50">Coming Soon</span>
+            </button>
+          </div>
+
         </div>
       `;
 
       lucide.createIcons();
+
+      setTimeout(() => {
+        init3DCharacterScene();
+      }, 50);
+    }
+
+    let characterMixer = null;
+
+    function init3DCharacterScene() {
+      const mount = document.getElementById('character-3d-mount');
+      if (!mount) return;
+
+      const w = mount.clientWidth || 500;
+      const h = mount.clientHeight || 450;
+
+      character3dScene = new THREE.Scene();
+
+      character3dCamera = new THREE.PerspectiveCamera(40, w / h, 0.1, 50);
+      character3dCamera.position.set(0, 1.25, 3.4);
+
+      character3dRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      character3dRenderer.setSize(w, h);
+      character3dRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      character3dRenderer.shadowMap.enabled = true;
+      character3dRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      character3dRenderer.domElement.style.touchAction = 'none';
+      character3dRenderer.domElement.style.pointerEvents = 'auto';
+      character3dRenderer.domElement.style.width = '100%';
+      character3dRenderer.domElement.style.height = '100%';
+
+      mount.innerHTML = '';
+      mount.appendChild(character3dRenderer.domElement);
+
+      const ambient = new THREE.AmbientLight(0xffedd5, 1.2);
+      character3dScene.add(ambient);
+
+      const keyLight = new THREE.DirectionalLight(0xffeedd, 2.5);
+      keyLight.position.set(-2.0, 3.5, 3.0);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.width = 1024;
+      keyLight.shadow.mapSize.height = 1024;
+      character3dScene.add(keyLight);
+
+      const rimLight = new THREE.DirectionalLight(0x38bdf8, 1.6);
+      rimLight.position.set(2.0, 3.0, -2.5);
+      character3dScene.add(rimLight);
+
+      const fillLight = new THREE.PointLight(0xffd185, 1.2, 10);
+      fillLight.position.set(1.5, 1.5, 2.0);
+      character3dScene.add(fillLight);
+
+      // Gold Mahogany Stage Platform
+      const platformGeo = new THREE.CylinderGeometry(1.15, 1.3, 0.12, 48);
+      const platformMat = new THREE.MeshStandardMaterial({ color: 0x161210, roughness: 0.5, metalness: 0.4 });
+      const platformMesh = new THREE.Mesh(platformGeo, platformMat);
+      platformMesh.position.y = -0.66;
+      platformMesh.receiveShadow = true;
+      character3dScene.add(platformMesh);
+
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.25, metalness: 0.85 });
+      const ringGeo = new THREE.TorusGeometry(1.16, 0.018, 16, 64);
+      const ringMesh = new THREE.Mesh(ringGeo, goldMat);
+      ringMesh.rotation.x = Math.PI / 2;
+      ringMesh.position.y = -0.601;
+      character3dScene.add(ringMesh);
+
+      // GLB Model Loader
+      if (typeof THREE.GLTFLoader !== 'undefined') {
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          '/mrityunjay.glb',
+          function (gltf) {
+            console.log('Successfully loaded /mrityunjay.glb:', gltf);
+            const model = gltf.scene;
+
+            // Enable shadows & double-sided rendering for materials
+            model.traverse((child) => {
+              if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if (child.material) {
+                  child.material.side = THREE.DoubleSide;
+                  child.material.needsUpdate = true;
+                }
+              }
+            });
+
+            // Calculate Bounding Box
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+
+            // Center geometry and align feet at platform surface (y=-0.6)
+            model.position.x = -center.x;
+            model.position.y = -box.min.y;
+            model.position.z = -center.z;
+
+            const wrapperGroup = new THREE.Group();
+            wrapperGroup.add(model);
+
+            // Scale model so full human height fills ~75-80% of viewport (~2.35 scene units)
+            const modelHeight = size.y || 1;
+            const targetHeight = 2.35;
+            const scaleFactor = targetHeight / modelHeight;
+            wrapperGroup.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+            // Position wrapper group on stage platform
+            wrapperGroup.position.set(0, -0.6, 0);
+
+            character3dScene.add(wrapperGroup);
+            characterMeshGroup = wrapperGroup;
+
+            // Play idle animation if present in GLB
+            if (gltf.animations && gltf.animations.length > 0) {
+              characterMixer = new THREE.AnimationMixer(model);
+              const idleAction = characterMixer.clipAction(gltf.animations[0]);
+              idleAction.play();
+            }
+          },
+          function (xhr) {
+            if (xhr.lengthComputable) {
+              console.log('GLB load progress: ' + Math.round((xhr.loaded / xhr.total) * 100) + '%');
+            }
+          },
+          function (error) {
+            console.error('Error loading /mrityunjay.glb:', error);
+            // Fallback to procedurally constructed 3D model if GLB fails
+            characterMeshGroup = createMrityunjay3DModel();
+            characterMeshGroup.position.set(0, -0.6, 0);
+            character3dScene.add(characterMeshGroup);
+          }
+        );
+      } else {
+        characterMeshGroup = createMrityunjay3DModel();
+        characterMeshGroup.position.set(0, -0.6, 0);
+        character3dScene.add(characterMeshGroup);
+      }
+
+      character3dControls = new THREE.OrbitControls(character3dCamera, character3dRenderer.domElement);
+      character3dControls.enableDamping = true;
+      character3dControls.dampingFactor = 0.05;
+      character3dControls.target.set(0, 0.95, 0);
+      character3dControls.minDistance = 1.6;
+      character3dControls.maxDistance = 5.0;
+      character3dControls.minPolarAngle = 0.2;
+      character3dControls.maxPolarAngle = Math.PI / 2 + 0.05;
+      character3dControls.enablePan = false;
+
+      window.addEventListener('resize', onResizeCharacter3D);
+
+      const clock = new THREE.Clock();
+
+      function animateCharacter() {
+        characterAnimFrameId = requestAnimationFrame(animateCharacter);
+        const delta = clock.getDelta();
+
+        if (character3dControls) character3dControls.update();
+
+        if (characterMixer) {
+          characterMixer.update(delta);
+        } else if (characterMeshGroup) {
+          const time = clock.getElapsedTime();
+          characterMeshGroup.position.y = -0.6 + Math.sin(time * 2.0) * 0.008;
+        }
+
+        if (isCharacterResetting && character3dCamera && character3dControls) {
+          const defaultPos = new THREE.Vector3(0, 1.25, 3.4);
+          const defaultTarget = new THREE.Vector3(0, 0.95, 0);
+
+          character3dCamera.position.lerp(defaultPos, 0.08);
+          character3dControls.target.lerp(defaultTarget, 0.08);
+
+          if (character3dCamera.position.distanceTo(defaultPos) < 0.02) {
+            character3dCamera.position.copy(defaultPos);
+            character3dControls.target.copy(defaultTarget);
+            isCharacterResetting = false;
+          }
+        }
+
+        if (character3dRenderer && character3dScene && character3dCamera) {
+          character3dRenderer.render(character3dScene, character3dCamera);
+        }
+      }
+
+      animateCharacter();
+    }
+
+    function resetCharacterCamera() {
+      isCharacterResetting = true;
+    }
+
+    function onResizeCharacter3D() {
+      const mount = document.getElementById('character-3d-mount');
+      if (!mount || !character3dRenderer || !character3dCamera) return;
+      const w = mount.clientWidth;
+      const h = mount.clientHeight;
+      if (w > 0 && h > 0) {
+        character3dCamera.aspect = w / h;
+        character3dCamera.updateProjectionMatrix();
+        character3dRenderer.setSize(w, h);
+      }
     }
 
     let experiencesMenuTimer = null;
@@ -2936,6 +3855,8 @@
         renderVisualTextScreen('screen1');
       } else if (type === 'arvrvideo') {
         renderARVRVideoPlayer();
+      } else if (type === 'characters') {
+        renderCharacter3DViewer('mrityunjay');
       } else {
         renderVisualTextScreen('other');
       }
