@@ -2530,10 +2530,11 @@
       video.onended = null;
       video.onerror = null;
 
-      // REMOVE LOOP ATTRIBUTE
+      // REMOVE LOOP & UNMUTE BY DEFAULT
       video.loop = false;
       video.removeAttribute('loop');
-      video.muted = true;
+      video.muted = false;
+      video.volume = 1.0;
       video.playsInline = true;
 
       // Update video source
@@ -2558,8 +2559,11 @@
         arvrOverlay.classList.remove('pointer-events-auto');
       }
 
+      // Play video with unmuted audio fallback
       video.play().catch(e => {
-        console.warn('Autoplay handler:', e);
+        console.warn('Unmuted autoplay prevented by browser policy, falling back:', e);
+        video.muted = true;
+        video.play().catch(e2 => console.warn(e2));
       });
 
       // Attach ended listener
@@ -2700,21 +2704,145 @@
 
     function renderVisualTextScreen(screenName) {
       stopAllMediaAndAudio();
+      showVRPanorama();
+      setStory3DSceneState(screenName);
 
       const detailView = document.getElementById('view-experience-detail');
-      document.getElementById('view-cards-overview')?.classList.add('hidden');
-      detailView?.classList.remove('hidden');
+      const contentContainer = document.getElementById('detail-dynamic-content');
 
-      if (screenName === 'other') {
+      document.getElementById('view-cards-overview')?.classList.add('hidden');
+      if (detailView) detailView.classList.remove('hidden');
+
+      if (screenName === 'screen1' || screenName === 'scene1') {
+        showCinematicSubtitle('The State Security Bureau just raided the Calcutta printing press.', 4500);
+        setTimeout(() => {
+          showCinematicSubtitle('They found your name listed inside the secret files of Mrityunjay.', 4500);
+        }, 5000);
+
+        // Reset camera to default 3D perspective
+        targetCameraPos.set(0, 1.35, 2.3);
+        targetCameraLookAt.set(0, 0.75, 0);
+        isCameraAnimating = true;
+
+        contentContainer.innerHTML = `
+          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-3xl w-[92%] glass-panel border border-amber-500/50 rounded-2xl p-5 shadow-2xl pointer-events-auto space-y-3 border-l-4 border-l-amber-400 backdrop-blur-xl bg-[#120e0b]/90">
+            <div class="flex items-center justify-between border-b border-amber-500/20 pb-2">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
+                <span class="text-xs font-mono text-amber-300 font-bold uppercase tracking-widest">THE SETUP • LAHORE BUREAU (1982)</span>
+              </div>
+              <span class="text-[10px] font-mono text-amber-400/70">INTERROGATION IN PROGRESS</span>
+            </div>
+
+            <p class="font-serif-vintage text-amber-100 text-sm md:text-base italic">
+              "Tell us where the eastern rebels are hiding, or you go down with him."
+            </p>
+
+            <!-- CHOICE BUTTONS OVERLAY -->
+            <div id="choice-buttons-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <button onclick="renderVisualTextScreen('pathA')" class="p-3.5 rounded-xl bg-stone-900/90 hover:bg-amber-500/20 border border-stone-700 hover:border-amber-400 text-left transition-all group shadow-xl cursor-pointer">
+                <span class="text-[10px] text-amber-400 font-bold block">PATH A</span>
+                <p class="font-cinzel text-xs font-bold text-stone-100 group-hover:text-amber-300">"I know nothing, I am just a reader."</p>
+              </button>
+              <button onclick="renderVisualTextScreen('pathB')" class="p-3.5 rounded-xl bg-stone-900/90 hover:bg-amber-500/20 border border-stone-700 hover:border-amber-400 text-left transition-all group shadow-xl cursor-pointer">
+                <span class="text-[10px] text-amber-400 font-bold block">PATH B</span>
+                <p class="font-cinzel text-xs font-bold text-stone-100 group-hover:text-amber-300">"The east will rise. Do your worst."</p>
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (screenName === 'pathA' || screenName === 'scene2a') {
+        showCinematicSubtitle('The investigator smiles coldly: "Everyone is just a reader until the presses start burning..."', 5000);
+        
+        // Camera lerps toward heavy door
+        targetCameraPos.set(-1.2, 1.35, -1.5);
+        targetCameraLookAt.set(-2.5, 1.25, -3.45);
+        isCameraAnimating = true;
+
+        contentContainer.innerHTML = `
+          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-3xl w-[92%] glass-panel border border-blue-500/50 rounded-2xl p-5 shadow-2xl pointer-events-auto space-y-3 border-l-4 border-l-blue-400 backdrop-blur-xl bg-[#120e0b]/90">
+            <div class="flex items-center justify-between border-b border-blue-500/20 pb-2">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
+                <span class="text-xs font-mono text-blue-300 font-bold uppercase tracking-widest">I KNOW NOTHING, I AM JUST A READER.</span>
+              </div>
+              <span class="text-[10px] font-mono text-blue-300">IRON DOOR UNLATCHING</span>
+            </div>
+
+            <p class="font-serif-vintage text-slate-100 text-sm md:text-base">
+              "You think compliance keeps you safe? By staying silent, you have chosen your side. You vanish into the exact same silence."
+            </p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              <button onclick="renderVisualTextScreen('screen3')" class="py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 font-cinzel font-bold text-white text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2 cursor-pointer">
+                <span>The Cliffhanger</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+              <button onclick="renderVisualTextScreen('screen1')" class="py-3 px-4 rounded-xl bg-stone-900/90 hover:bg-amber-500/20 border border-stone-700 hover:border-amber-400 font-cinzel font-bold text-amber-200 text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2 cursor-pointer">
+                <span>The Setup</span>
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (screenName === 'pathB' || screenName === 'scene2b') {
+        showCinematicSubtitle('Defense siren wails across the building! Power grid plunged into darkness...', 5000);
+        
+        // Camera pulls back
+        targetCameraPos.set(0, 1.6, 3.2);
+        targetCameraLookAt.set(0, 0.75, 0);
+        isCameraAnimating = true;
+
+        contentContainer.innerHTML = `
+          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-3xl w-[92%] glass-panel border border-amber-600/50 rounded-2xl p-5 shadow-2xl pointer-events-auto space-y-3 border-l-4 border-l-red-500 backdrop-blur-xl bg-[#120e0b]/90">
+            <div class="flex items-center justify-between border-b border-amber-800/40 pb-2">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
+                <span class="text-xs font-mono text-amber-400 font-bold uppercase tracking-widest">THE EAST WILL RISE. DO YOUR WORST.</span>
+              </div>
+              <span class="text-[10px] font-mono text-red-400 font-bold">DEFENSE SIREN ACTIVE</span>
+            </div>
+
+            <p class="font-serif-vintage text-amber-100 text-sm md:text-base">
+              "You think you're a martyr? The eastern jungles are already burning! We don't need your words—we have your execution order."
+            </p>
+
+            <div class="pt-1">
+              <button onclick="renderVisualTextScreen('screen3')" class="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 font-cinzel font-bold text-stone-950 text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2 cursor-pointer">
+                <span>The Cliffhanger</span>
+                <i data-lucide="zap" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (screenName === 'screen3' || screenName === 'scene3') {
+        showCinematicSubtitle('History is rewritten by those who survive. The file is sealed.', 6000);
+
+        contentContainer.innerHTML = `
+          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-2xl w-[92%] glass-panel border border-red-700/60 rounded-2xl p-6 shadow-2xl pointer-events-auto text-center space-y-4 backdrop-blur-xl bg-[#120e0b]/90">
+            <span class="text-[10px] font-mono text-red-400 uppercase tracking-widest font-bold block">THE CLIFFHANGER • CLASSIFIED FILE SEALED</span>
+            <h3 class="font-cinzel text-xl font-extrabold text-red-500 glow-gold">History is rewritten by those who survive.</h3>
+
+            <p class="font-serif-vintage text-xs md:text-sm text-stone-300 max-w-lg mx-auto leading-relaxed">
+              Mrityunjay's rebellion has broken the perimeter walls of the Bureau. Will India stand united under tyranny, or shatter into a million pieces?
+            </p>
+
+            <div class="space-y-2 pt-2">
+              <button onclick="renderVisualTextScreen('screen1')" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 font-cinzel font-bold text-white text-xs tracking-wider uppercase shadow-xl transition-all border border-red-500/40 cursor-pointer">
+                RESTART STORY — THE SETUP
+              </button>
+              
+              <button onclick="showOverviewCards()" class="inline-block text-[11px] font-mono text-amber-400 hover:text-amber-300 underline cursor-pointer">
+                Back to Experiences
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
         hideVRPanorama();
-        return;
       }
 
-      const targetScene = (screenName === 'pathA' || screenName === 'scene2a') ? 'scene2a' :
-                          (screenName === 'pathB' || screenName === 'scene2b') ? 'scene2b' :
-                          (screenName === 'screen3' || screenName === 'scene3') ? 'scene3' : 'scene1';
-
-      playStoryVideoScene(targetScene);
+      lucide.createIcons();
     }
 
     function renderARVRVideoPlayer() {
