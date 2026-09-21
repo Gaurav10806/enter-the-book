@@ -1321,8 +1321,8 @@
                   <i data-lucide="map-pin" class="w-6 h-6"></i>
                 </div>
                 <div class="flex-1">
-                  <h4 class="font-cinzel text-lg font-bold text-amber-200">Location Map</h4>
-                  <p class="text-xs text-amber-200/70 mt-1">3D interactive fantasy map of territories, kingdoms & battlefields.</p>
+                  <h4 class="font-cinzel text-lg font-bold text-amber-200">The Story Atlas</h4>
+                  <p class="text-xs text-amber-200/70 mt-1">Classified 1982 archival story network of locations & character dossier connections.</p>
                 </div>
                 <i data-lucide="chevron-right" class="w-5 h-5 text-amber-400"></i>
               </div>
@@ -1331,7 +1331,7 @@
 
           <!-- DYNAMIC OVERLAY SCREENS FOR INTERACTIVE STORY -->
           <div id="view-experience-detail" class="hidden pointer-events-auto">
-            <div class="flex items-center justify-between mb-4 pointer-events-auto">
+            <div id="detail-header-bar" class="flex items-center justify-between mb-4 pointer-events-auto">
               <button onclick="showOverviewCards()" class="text-xs font-bold text-amber-300 hover:text-amber-100 flex items-center space-x-1 glass-button px-4 py-2 rounded-xl border border-amber-400/40 shadow-2xl">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
                 <span>Back to Options</span>
@@ -2190,6 +2190,11 @@
     }
 
     function stopAllMediaAndAudio() {
+      if (typeof storyState !== 'undefined') {
+        storyState.isTransitioning = false;
+        storyState.status = 'idle';
+      }
+
       // 1. Cancel Speech Synthesis narration
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -2206,6 +2211,7 @@
         try {
           v.pause();
           v.currentTime = 0;
+          v.onended = null;
         } catch (e) {}
       });
 
@@ -2462,144 +2468,253 @@
 
     document.getElementById('book-click-trigger').addEventListener('click', animateBookOpeningAndTransition);
 
-    // DYNAMIC SCRIPTED NARRATIVE FLOW OVER HIGH-RES INTERROGATION ROOM BACKDROP
-    function renderVisualTextScreen(screenName) {
-      showVRPanorama();
-      setStory3DSceneState(screenName);
+    // BRANCHING VIDEO NARRATIVE ENGINE FOR INTERACTIVE STORY
+    const STORY_VIDEO_SCENES = {
+      scene1: {
+        file: '/this_is_how_the_scenes_are_sup.mp4',
+        title: 'The Setup',
+        choices: [
+          { label: 'I know nothing, I am just a reader.', nextScene: 'scene2a' },
+          { label: 'The east will rise. Do your worst.', nextScene: 'scene2b' }
+        ]
+      },
+      scene2a: {
+        file: '/Scene_—_Path_A_Compliant.mp4',
+        title: 'I know nothing, I am just a reader.',
+        choices: [
+          { label: 'The Cliffhanger', nextScene: 'scene3' },
+          { label: 'The Setup', nextScene: 'scene1' }
+        ]
+      },
+      scene2b: {
+        file: '/Scene_—_Path_B_Rebel_A.mp4',
+        title: 'The east will rise. Do your worst.',
+        autoNext: 'scene3'
+      },
+      scene3: {
+        file: '/scene 3.mp4',
+        title: 'The Cliffhanger',
+        isFinal: true
+      }
+    };
 
-      const detailView = document.getElementById('view-experience-detail');
-      const contentContainer = document.getElementById('detail-dynamic-content');
+    let storyState = {
+      currentScene: 'scene1',
+      status: 'idle', // 'playing' | 'transitioning' | 'choice' | 'ended'
+      isTransitioning: false
+    };
 
-      document.getElementById('view-cards-overview').classList.add('hidden');
-      detailView.classList.remove('hidden');
+    function playStoryVideoScene(sceneId) {
+      const config = STORY_VIDEO_SCENES[sceneId];
+      if (!config) return;
 
-      if (screenName === 'screen1') {
-        // Trigger cinematic introductory subtitle sequence
-        showCinematicSubtitle('The State Security Bureau just raided the Calcutta printing press.', 4500);
-        setTimeout(() => {
-          showCinematicSubtitle('They found your name listed inside the secret files of Mrityunjay.', 4500);
-        }, 5000);
+      storyState.currentScene = sceneId;
+      storyState.status = 'playing';
+      storyState.isTransitioning = false;
 
-        // Reset camera to default desktop perspective
-        targetCameraPos.set(0, 1.35, 2.3);
-        targetCameraLookAt.set(0, 0.75, 0);
-        isCameraAnimating = true;
+      // Select active video element (arvr-video-player if present, else interactive-bg-video)
+      let video = document.getElementById('arvr-video-player') || document.getElementById('interactive-bg-video');
 
-        contentContainer.innerHTML = `
-          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-3xl w-[92%] glass-panel border border-amber-500/50 rounded-2xl p-5 shadow-2xl pointer-events-auto space-y-3 border-l-4 border-l-amber-400">
-            <div class="flex items-center justify-between border-b border-amber-500/20 pb-2">
-              <div class="flex items-center space-x-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
-                <span class="text-xs font-mono text-amber-300 font-bold uppercase tracking-widest">INVESTIGATOR • LAHORE BUREAU (1982)</span>
-              </div>
-              <span class="text-[10px] font-mono text-amber-400/70">INTERROGATION IN PROGRESS</span>
-            </div>
+      if (!document.getElementById('arvr-video-player')) {
+        const vrBg = document.getElementById('vr-story-bg');
+        if (vrBg) vrBg.classList.remove('hidden');
+        document.getElementById('default-bg')?.classList.add('hidden');
+        document.getElementById('story-3d-canvas-container')?.classList.add('hidden');
+        video = document.getElementById('interactive-bg-video');
+      }
 
-            <p class="font-serif-vintage text-amber-100 text-sm md:text-base italic">
-              "Tell us where the eastern rebels are hiding, or you go down with him."
-            </p>
+      if (!video) return;
 
-            <!-- CHOICE BUTTONS OVERLAY -->
-            <div id="choice-buttons-container" class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
-              <button onclick="renderVisualTextScreen('pathA')" class="p-3.5 rounded-xl bg-stone-900/90 hover:bg-amber-500/20 border border-stone-700 hover:border-amber-400 text-left transition-all group shadow-xl">
-                <span class="text-[10px] text-amber-400 font-bold block">CHOICE 1</span>
-                <p class="font-cinzel text-xs font-bold text-stone-100 group-hover:text-amber-300">"I know nothing. I am just a reader."</p>
-              </button>
-              <button onclick="renderVisualTextScreen('pathB')" class="p-3.5 rounded-xl bg-stone-900/90 hover:bg-amber-500/20 border border-stone-700 hover:border-amber-400 text-left transition-all group shadow-xl">
-                <span class="text-[10px] text-amber-400 font-bold block">CHOICE 2</span>
-                <p class="font-cinzel text-xs font-bold text-stone-100 group-hover:text-amber-300">"The East will rise. Do your worst."</p>
-              </button>
-            </div>
-          </div>
-        `;
-      } else if (screenName === 'pathA') {
-        showCinematicSubtitle('The investigator smiles coldly: "Everyone is just a reader until the presses start burning..."', 5000);
-        
-        // Camera lerps toward heavy door
-        targetCameraPos.set(-1.2, 1.35, -1.5);
-        targetCameraLookAt.set(-2.5, 1.25, -3.45);
-        isCameraAnimating = true;
+      // Clean up previous handlers and pause video
+      video.pause();
+      video.onended = null;
+      video.onerror = null;
 
-        contentContainer.innerHTML = `
-          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-3xl w-[92%] glass-panel border border-blue-500/50 rounded-2xl p-5 shadow-2xl pointer-events-auto space-y-3 border-l-4 border-l-blue-400">
-            <div class="flex items-center justify-between border-b border-blue-500/20 pb-2">
-              <div class="flex items-center space-x-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-blue-400 animate-pulse"></span>
-                <span class="text-xs font-mono text-blue-300 font-bold uppercase tracking-widest">SCENE 2 • PATH A: THE COMPLIANT PATH</span>
-              </div>
-              <span class="text-[10px] font-mono text-blue-300">IRON DOOR UNLATCHING</span>
-            </div>
+      // REMOVE LOOP ATTRIBUTE
+      video.loop = false;
+      video.removeAttribute('loop');
+      video.muted = true;
+      video.playsInline = true;
 
-            <p class="font-serif-vintage text-slate-100 text-sm md:text-base">
-              "You think compliance keeps you safe? By staying silent, you have chosen your side. You vanish into the exact same silence."
-            </p>
-
-            <div class="pt-1">
-              <button onclick="renderVisualTextScreen('screen3')" class="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 font-cinzel font-bold text-white text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2">
-                <span>Face the consequences...</span>
-                <i data-lucide="arrow-right" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-        `;
-      } else if (screenName === 'pathB') {
-        showCinematicSubtitle('Defense siren wails across the building! Power grid plunged into darkness...', 5000);
-        
-        // Camera pulls back
-        targetCameraPos.set(0, 1.6, 3.2);
-        targetCameraLookAt.set(0, 0.75, 0);
-        isCameraAnimating = true;
-
-        contentContainer.innerHTML = `
-          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-3xl w-[92%] glass-panel border border-amber-600/50 rounded-2xl p-5 shadow-2xl pointer-events-auto space-y-3 border-l-4 border-l-red-500">
-            <div class="flex items-center justify-between border-b border-amber-800/40 pb-2">
-              <div class="flex items-center space-x-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping"></span>
-                <span class="text-xs font-mono text-amber-400 font-bold uppercase tracking-widest">SCENE 2 • PATH B: THE REBEL PATH</span>
-              </div>
-              <span class="text-[10px] font-mono text-red-400 font-bold">DEFENSE SIREN ACTIVE</span>
-            </div>
-
-            <p class="font-serif-vintage text-amber-100 text-sm md:text-base">
-              "You think you're a martyr? The eastern jungles are already burning! We don't need your words—we have your execution order."
-            </p>
-
-            <div class="pt-1">
-              <button onclick="renderVisualTextScreen('screen3')" class="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 font-cinzel font-bold text-stone-950 text-xs tracking-wider uppercase shadow-xl transition-all flex items-center justify-center space-x-2">
-                <span>Seize the moment...</span>
-                <i data-lucide="zap" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-        `;
-      } else if (screenName === 'screen3') {
-        showCinematicSubtitle('History is rewritten by those who survive. The file is sealed.', 6000);
-
-        contentContainer.innerHTML = `
-          <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 max-w-2xl w-[92%] glass-panel border border-red-700/60 rounded-2xl p-6 shadow-2xl pointer-events-auto text-center space-y-4">
-            <span class="text-[10px] font-mono text-red-400 uppercase tracking-widest font-bold block">CLASSIFIED FILE SEALED</span>
-            <h3 class="font-cinzel text-xl font-extrabold text-red-500 glow-gold">History is rewritten by those who survive.</h3>
-
-            <p class="font-serif-vintage text-xs md:text-sm text-stone-300 max-w-lg mx-auto leading-relaxed">
-              Mrityunjay's rebellion has broken the perimeter walls of the Bureau. Will India stand united under tyranny, or shatter into a million pieces?
-            </p>
-
-            <div class="space-y-2 pt-2">
-              <a href="#" class="block w-full py-3 px-4 rounded-xl bg-gradient-to-r from-red-700 via-red-600 to-amber-600 hover:from-red-600 hover:to-amber-500 font-cinzel font-bold text-white text-xs tracking-wider uppercase shadow-xl transition-all hover:scale-105 border border-red-500/40">
-                📖 JOIN THE RESISTANCE — BUY "THE MISSING NATION" NOW
-              </a>
-              
-              <button onclick="loginAsRole('Publisher')" class="inline-block text-[11px] font-mono text-amber-400 hover:text-amber-300 underline">
-                📊 View Publisher ROI Analytics Dashboard
-              </button>
-            </div>
-          </div>
-        `;
+      // Update video source
+      const srcEl = video.querySelector('source');
+      if (srcEl) {
+        srcEl.src = config.file;
       } else {
-        hideVRPanorama();
+        video.src = config.file;
+      }
+
+      video.load();
+      video.currentTime = 0;
+
+      video.style.transition = 'opacity 400ms ease';
+      video.style.opacity = '1';
+
+      // Clear choice overlay during playback
+      const arvrOverlay = document.getElementById('arvr-choice-overlay');
+      if (arvrOverlay) {
+        arvrOverlay.innerHTML = '';
+        arvrOverlay.classList.add('pointer-events-none');
+        arvrOverlay.classList.remove('pointer-events-auto');
+      }
+
+      video.play().catch(e => {
+        console.warn('Autoplay handler:', e);
+      });
+
+      // Attach ended listener
+      video.onended = () => {
+        handleStoryVideoEnded(sceneId);
+      };
+    }
+
+    function handleStoryVideoEnded(sceneId) {
+      if (storyState.isTransitioning) return;
+      storyState.isTransitioning = true;
+      storyState.status = 'transitioning';
+
+      const config = STORY_VIDEO_SCENES[sceneId];
+
+      setTimeout(() => {
+        storyState.isTransitioning = false;
+
+        if (sceneId === 'scene2b') {
+          // Scene 2B automatically proceeds to Scene 3
+          playStoryVideoScene('scene3');
+        } else if (config && config.isFinal) {
+          // Scene 3 Final Completion State
+          storyState.status = 'ended';
+          renderStoryCompletionUI();
+        } else if (config && config.choices) {
+          // Render Choice UI for Scene 1 or Scene 2A
+          storyState.status = 'choice';
+          renderStoryChoiceUI(config);
+        }
+      }, 400);
+    }
+
+    function renderStoryChoiceUI(config) {
+      const titleText = storyState.currentScene === 'scene1' ? 'WHAT HAPPENS NEXT?' : 'CHOOSE YOUR PATH';
+
+      const buttonsHtml = config.choices.map((c) => {
+        const isReturn = c.nextScene === 'scene1';
+        const arrow = isReturn ? '↺' : '➔';
+        return `
+          <button 
+            onclick="selectStoryChoice('${c.nextScene}')"
+            class="w-full py-3.5 px-6 rounded-xl bg-[#1c1612]/95 hover:bg-[#d4a359]/30 border border-[#d4a359]/60 hover:border-[#d4a359] text-[#f4ead5] font-cinzel font-bold text-xs tracking-widest uppercase transition-all transform hover:-translate-y-0.5 shadow-2xl flex items-center justify-between group cursor-pointer pointer-events-auto"
+          >
+            <span>${c.label}</span>
+            <span class="text-amber-400 group-hover:scale-125 transition-transform">${arrow}</span>
+          </button>
+        `;
+      }).join('');
+
+      const choiceBoxHtml = `
+        <div class="max-w-lg w-[92%] glass-panel border border-[#d4a359]/60 rounded-2xl p-6 shadow-2xl pointer-events-auto text-center space-y-4 animate-fadeIn backdrop-blur-xl bg-[#120e0b]/95">
+          <div class="text-[10px] font-mono text-[#d4a359] font-bold uppercase tracking-widest border-b border-[#d4a359]/30 pb-2">
+            ${titleText}
+          </div>
+          <div class="space-y-3 pt-1">
+            ${buttonsHtml}
+          </div>
+        </div>
+      `;
+
+      const arvrOverlay = document.getElementById('arvr-choice-overlay');
+      if (arvrOverlay && document.getElementById('arvr-video-player')) {
+        arvrOverlay.innerHTML = choiceBoxHtml;
+        arvrOverlay.classList.remove('pointer-events-none');
+        arvrOverlay.classList.add('pointer-events-auto');
+      } else {
+        const contentContainer = document.getElementById('detail-dynamic-content');
+        if (contentContainer) {
+          contentContainer.innerHTML = `
+            <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 max-w-lg w-[92%]">
+              ${choiceBoxHtml}
+            </div>
+          `;
+        }
       }
 
       lucide.createIcons();
+    }
+
+    function selectStoryChoice(nextScene) {
+      if (storyState.isTransitioning) return;
+      storyState.isTransitioning = true;
+
+      const contentContainer = document.getElementById('detail-dynamic-content');
+      if (contentContainer) {
+        contentContainer.style.transition = 'opacity 300ms ease';
+        contentContainer.style.opacity = '0';
+      }
+
+      setTimeout(() => {
+        if (contentContainer) contentContainer.style.opacity = '1';
+        playStoryVideoScene(nextScene);
+      }, 350);
+    }
+
+    function renderStoryCompletionUI() {
+      const completionBoxHtml = `
+        <div class="max-w-lg w-[92%] glass-panel border border-[#d4a359]/60 rounded-2xl p-6 shadow-2xl pointer-events-auto text-center space-y-4 animate-fadeIn backdrop-blur-xl bg-[#120e0b]/95">
+          <div class="text-[10px] font-mono text-[#d4a359] font-bold uppercase tracking-widest border-b border-[#d4a359]/30 pb-2">
+            CLASSIFIED DOSSIER CONCLUDED
+          </div>
+          <h3 class="font-cinzel text-lg md:text-xl font-extrabold text-[#f4ead5] glow-gold">
+            The Fate of The Missing Nation
+          </h3>
+          <p class="font-serif-vintage text-xs text-amber-200/90 italic leading-relaxed">
+            "History is rewritten by those who survive. The file is sealed."
+          </p>
+          <div class="space-y-2.5 pt-2">
+            <button onclick="selectStoryChoice('scene1')" class="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-[#b8860b] via-[#d4a359] to-[#b8860b] hover:brightness-110 text-[#1a120b] font-cinzel font-bold text-xs tracking-widest uppercase transition-all shadow-xl cursor-pointer">
+              RESTART STORY
+            </button>
+            <button onclick="showOverviewCards()" class="w-full py-3 px-5 rounded-xl bg-[#1c1612]/90 hover:bg-[#2b1e17] border border-[#d4a359]/30 text-[#f4ead5] font-cinzel font-bold text-xs tracking-widest uppercase transition-all cursor-pointer">
+              BACK TO EXPERIENCES
+            </button>
+          </div>
+        </div>
+      `;
+
+      const arvrOverlay = document.getElementById('arvr-choice-overlay');
+      if (arvrOverlay && document.getElementById('arvr-video-player')) {
+        arvrOverlay.innerHTML = completionBoxHtml;
+        arvrOverlay.classList.remove('pointer-events-none');
+        arvrOverlay.classList.add('pointer-events-auto');
+      } else {
+        const contentContainer = document.getElementById('detail-dynamic-content');
+        if (contentContainer) {
+          contentContainer.innerHTML = `
+            <div class="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 max-w-lg w-[92%]">
+              ${completionBoxHtml}
+            </div>
+          `;
+        }
+      }
+
+      lucide.createIcons();
+    }
+
+    function renderVisualTextScreen(screenName) {
+      stopAllMediaAndAudio();
+
+      const detailView = document.getElementById('view-experience-detail');
+      document.getElementById('view-cards-overview')?.classList.add('hidden');
+      detailView?.classList.remove('hidden');
+
+      if (screenName === 'other') {
+        hideVRPanorama();
+        return;
+      }
+
+      const targetScene = (screenName === 'pathA' || screenName === 'scene2a') ? 'scene2a' :
+                          (screenName === 'pathB' || screenName === 'scene2b') ? 'scene2b' :
+                          (screenName === 'screen3' || screenName === 'scene3') ? 'scene3' : 'scene1';
+
+      playStoryVideoScene(targetScene);
     }
 
     function renderARVRVideoPlayer() {
@@ -2646,7 +2761,10 @@
           <!-- MAIN VIDEO VIEWER SECTION -->
           <div class="my-4 relative w-full h-[400px] md:h-[460px] rounded-2xl overflow-hidden border border-amber-500/30 shadow-2xl bg-black group pointer-events-auto flex items-center justify-center">
             
-            <video id="arvr-video-player" class="w-full h-full object-cover rounded-2xl" src="/this_is_how_the_scenes_are_sup.mp4" poster="/vr_interrogation.jpg" controls autoplay loop playsinline></video>
+            <video id="arvr-video-player" class="w-full h-full object-cover rounded-2xl" src="/this_is_how_the_scenes_are_sup.mp4" poster="/vr_interrogation.jpg" controls autoplay playsinline></video>
+
+            <!-- DYNAMIC CHOICE BUTTONS OVERLAY CONTAINER -->
+            <div id="arvr-choice-overlay" class="absolute inset-0 z-30 flex items-center justify-center p-4 pointer-events-none"></div>
 
             <!-- SPATIAL & VR BADGES OVERLAY -->
             <div class="absolute top-4 left-4 glass-panel px-3 py-1.5 rounded-full text-[11px] font-mono text-amber-200/90 border border-amber-500/30 flex items-center space-x-2 pointer-events-none shadow-lg z-20">
@@ -2678,6 +2796,11 @@
       `;
 
       lucide.createIcons();
+
+      // Start branching video scene for arvr-video-player
+      setTimeout(() => {
+        playStoryVideoScene('scene1');
+      }, 100);
     }
 
     function toggleVideoVRFullscreen() {
@@ -3849,16 +3972,25 @@
 
     function selectExperience(type) {
       stopAllMediaAndAudio();
-      if (type === 'audiobook') {
-        renderAudioBookPlayer();
-      } else if (type === 'visualtexts') {
-        renderVisualTextScreen('screen1');
-      } else if (type === 'arvrvideo') {
-        renderARVRVideoPlayer();
-      } else if (type === 'characters') {
-        renderCharacter3DViewer('mrityunjay');
+      const headerBar = document.getElementById('detail-header-bar');
+      if (type === 'map') {
+        if (headerBar) headerBar.classList.add('hidden');
+        if (window.renderLocationMapExperience) {
+          window.renderLocationMapExperience();
+        }
       } else {
-        renderVisualTextScreen('other');
+        if (headerBar) headerBar.classList.remove('hidden');
+        if (type === 'audiobook') {
+          renderAudioBookPlayer();
+        } else if (type === 'visualtexts') {
+          renderVisualTextScreen('screen1');
+        } else if (type === 'arvrvideo') {
+          renderARVRVideoPlayer();
+        } else if (type === 'characters') {
+          renderCharacter3DViewer('mrityunjay');
+        } else {
+          renderVisualTextScreen('other');
+        }
       }
     }
 
@@ -3867,6 +3999,8 @@
       hideVRPanorama();
       document.getElementById('view-experience-detail').classList.add('hidden');
       document.getElementById('view-cards-overview').classList.remove('hidden');
+      const headerBar = document.getElementById('detail-header-bar');
+      if (headerBar) headerBar.classList.remove('hidden');
       const detailContent = document.getElementById('detail-dynamic-content');
       if (detailContent) detailContent.innerHTML = '';
     }
@@ -3922,6 +4056,47 @@
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+  </script>
+  <!-- LOCATION MAP REACT MODULE INTEGRATION -->
+  <script type="module">
+    import { mountLocationMap } from '/src/LocationMap.jsx';
+
+    let currentMapRoot = null;
+
+    window.renderLocationMapExperience = function() {
+      const detailView = document.getElementById('view-experience-detail');
+      const overviewView = document.getElementById('view-cards-overview');
+      if (detailView) detailView.classList.remove('hidden');
+      if (overviewView) overviewView.classList.add('hidden');
+
+      const detailContent = document.getElementById('detail-dynamic-content');
+      if (!detailContent) return;
+
+      detailContent.innerHTML = '<div id="react-location-map-root" class="w-full"></div>';
+      const rootEl = document.getElementById('react-location-map-root');
+
+      if (currentMapRoot) {
+        try {
+          currentMapRoot.unmount();
+        } catch (e) {
+          console.warn('Map unmount notice:', e);
+        }
+      }
+
+      currentMapRoot = mountLocationMap(
+        rootEl,
+        () => {
+          if (window.showOverviewCards) {
+            window.showOverviewCards();
+          }
+        },
+        (experienceType) => {
+          if (window.selectExperience) {
+            window.selectExperience(experienceType);
+          }
+        }
+      );
+    };
   </script>
 </body>
 </html>
