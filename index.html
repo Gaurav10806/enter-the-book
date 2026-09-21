@@ -24,6 +24,13 @@
       color: #e5e7eb;
       overflow-x: hidden;
     }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
     .font-cinzel {
       font-family: 'Cinzel', serif;
     }
@@ -131,7 +138,7 @@
 
   <!-- CLICKABLE TRIGGER HOTSPOT OVER THE 3D BOOK -->
   <div id="book-click-trigger" 
-       class="absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2 z-30 w-[300px] h-[400px] cursor-pointer rounded-2xl group flex flex-col items-center justify-end pb-24 pointer-events-auto">
+       class="absolute left-[58%] top-[54%] -translate-x-1/2 -translate-y-1/2 z-30 w-[300px] h-[400px] cursor-pointer rounded-2xl group flex flex-col items-center justify-end pb-24 pointer-events-auto">
     <div class="glass-panel px-5 py-2.5 rounded-full border border-amber-400/60 shadow-2xl flex items-center space-x-2 text-xs text-amber-200 group-hover:scale-110 transition-all duration-300 animate-bounce">
       <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i>
       <span class="font-semibold">CLICK BOOK TO ENTER STORY</span>
@@ -480,7 +487,7 @@
           </div>
         </div>
 
-        <button onclick="loginAsRole('Publisher')" class="text-amber-100/70 hover:text-amber-300 transition-colors font-semibold flex items-center space-x-1">
+        <button id="nav-for-publishers" onclick="loginAsRole('Publisher')" class="text-amber-100/70 hover:text-amber-300 transition-colors font-semibold flex items-center space-x-1">
           <i data-lucide="bar-chart-3" class="w-4 h-4 text-purple-400"></i>
           <span>For Publishers</span>
         </button>
@@ -492,10 +499,32 @@
                  class="w-64 px-4 py-2 pl-10 text-xs rounded-full glass-panel text-amber-100 placeholder-amber-200/40 focus:outline-none focus:border-amber-400/60 transition-all">
           <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-amber-400/50"></i>
         </div>
-        <button class="p-2 rounded-full glass-button text-amber-200 relative">
-          <i data-lucide="bell" class="w-4 h-4"></i>
-          <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-        </button>
+        <!-- NOTIFICATION BELL & DROPDOWN -->
+        <div class="relative" id="notification-bell-container">
+          <button id="btn-notification-bell" onclick="toggleNotificationsMenu(event)" class="p-2 rounded-full glass-button text-amber-200 relative focus:outline-none hover:text-amber-100 transition-colors">
+            <i data-lucide="bell" class="w-4 h-4"></i>
+            <span id="nav-unread-badge" class="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          </button>
+
+          <!-- Premium Notification Dropdown -->
+          <div id="notifications-dropdown" class="absolute right-0 top-full mt-2 w-80 md:w-88 bg-[#0c0a09]/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-3 shadow-2xl shadow-black/90 opacity-0 pointer-events-none transition-all duration-200 z-50">
+            <!-- Header -->
+            <div class="px-3 py-2 border-b border-amber-500/15 mb-2 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i data-lucide="bell" class="w-3.5 h-3.5 text-amber-400"></i>
+                <h3 class="font-cinzel text-xs font-bold text-amber-200">Notifications</h3>
+              </div>
+              <button onclick="markAllNotificationsAsRead(event)" class="text-[11px] text-amber-400/80 hover:text-amber-300 font-semibold hover:underline focus:outline-none">
+                Mark all as read
+              </button>
+            </div>
+
+            <!-- Notification List Container -->
+            <div id="notifications-list-container" class="space-y-1.5 max-h-80 overflow-y-auto no-scrollbar">
+              <!-- Dynamically populated via renderNotifications() -->
+            </div>
+          </div>
+        </div>
         <div onclick="openRoleModal()" title="Switch Access Persona / Role" class="w-9 h-9 rounded-full bg-gradient-to-tr from-amber-700 via-purple-500 to-amber-400 p-[1px] cursor-pointer hover:scale-110 transition-transform">
           <div class="w-full h-full rounded-full bg-stone-900 flex items-center justify-center font-bold text-xs text-amber-200" id="nav-user-avatar">
             U
@@ -808,8 +837,8 @@
       activeBookGroup = created.group;
       coverPivot = created.coverPivot;
 
-      activeBookGroup.position.set(0.1, -0.05, 0);
-      activeBookGroup.rotation.set(0.08, -0.25, 0.02);
+      activeBookGroup.position.set(0.45, -0.16, 0);
+      activeBookGroup.rotation.set(0.04, -0.10, 0.0);
       scene.add(activeBookGroup);
 
       document.getElementById('current-idx').textContent = (idx + 1).toString().padStart(2, '0');
@@ -1584,30 +1613,50 @@
       document.getElementById('role-select-modal').classList.remove('hidden');
     }
 
-    function loginAsRole(role) {
+    function updateRoleUI(role) {
       currentRole = role;
-      document.getElementById('role-select-modal').classList.add('hidden');
+      const roleLower = (role || 'User').toLowerCase();
+      const navForPublishers = document.getElementById('nav-for-publishers');
+      
+      if (roleLower === 'user') {
+        if (navForPublishers) navForPublishers.classList.add('hidden');
+      } else {
+        if (navForPublishers) navForPublishers.classList.remove('hidden');
+      }
+
       const activeRoleLabel = document.getElementById('current-active-role');
       if (activeRoleLabel) activeRoleLabel.textContent = role;
       
       const avatar = document.getElementById('nav-user-avatar');
       if (avatar) avatar.textContent = role.charAt(0);
+    }
 
-      if (role === 'Publisher') {
+    function loginAsRole(role) {
+      document.getElementById('role-select-modal').classList.add('hidden');
+      updateRoleUI(role);
+
+      const roleLower = (role || 'User').toLowerCase();
+
+      if (roleLower === 'publisher') {
         hideVRPanorama();
-        document.getElementById('canvas-container').classList.add('hidden');
-        document.getElementById('book-click-trigger').classList.add('hidden');
-        document.getElementById('carousel-left-arrow').classList.add('hidden');
-        document.getElementById('carousel-right-arrow').classList.add('hidden');
-        document.getElementById('main-footer').classList.add('hidden');
-        document.getElementById('open-book-website-view').classList.add('hidden');
+        document.getElementById('canvas-container')?.classList.add('hidden');
+        document.getElementById('book-click-trigger')?.classList.add('hidden');
+        document.getElementById('carousel-left-arrow')?.classList.add('hidden');
+        document.getElementById('carousel-right-arrow')?.classList.add('hidden');
+        document.getElementById('main-footer')?.classList.add('hidden');
+        document.getElementById('open-book-website-view')?.classList.add('hidden');
 
-        document.getElementById('publisher-dashboard-view').classList.remove('hidden');
+        document.getElementById('publisher-dashboard-view')?.classList.remove('hidden');
       } else {
-        document.getElementById('publisher-dashboard-view').classList.add('hidden');
+        document.getElementById('publisher-dashboard-view')?.classList.add('hidden');
         goToHome();
       }
     }
+
+    // Initialize UI for default role (User) on script execution
+    setTimeout(() => {
+      updateRoleUI(currentRole);
+    }, 0);
 
     function goToHome() {
       stopAllMediaAndAudio();
@@ -1945,16 +1994,170 @@
       }
     }
 
+    // ----------------------------------------------------
+    // NOTIFICATIONS SYSTEM FOR USER / READER ROLE
+    // ----------------------------------------------------
+    let NOTIFICATIONS = [
+      {
+        id: 1,
+        title: "New Experience Available",
+        message: "Explore the new 3D World experience for The Missing Nation.",
+        time: "Just now",
+        type: "arvrvideo",
+        unread: true
+      },
+      {
+        id: 2,
+        title: "Continue Your Story",
+        message: "You have an unfinished Interactive Story waiting for you.",
+        time: "2 hours ago",
+        type: "visualtexts",
+        unread: true
+      },
+      {
+        id: 3,
+        title: "New Content",
+        message: "A new Story Map location has been added to The Missing Nation.",
+        time: "Yesterday",
+        type: "map",
+        unread: true
+      },
+      {
+        id: 4,
+        title: "Experience Completed",
+        message: "You completed the Interactive Story.",
+        time: "2 days ago",
+        type: "visualtexts",
+        unread: false
+      },
+      {
+        id: 5,
+        title: "Platform Update",
+        message: "New immersive experiences are coming soon.",
+        time: "3 days ago",
+        type: "info",
+        unread: false
+      }
+    ];
+
+    function getNotificationIcon(type) {
+      switch (type) {
+        case 'arvrvideo': return 'glasses';
+        case 'visualtexts': return 'sparkles';
+        case 'map': return 'map-pin';
+        case 'characters': return 'users';
+        case 'audiobook': return 'headphones';
+        default: return 'sparkles';
+      }
+    }
+
+    function renderNotifications() {
+      const container = document.getElementById('notifications-list-container');
+      const badge = document.getElementById('nav-unread-badge');
+      if (!container) return;
+
+      const unreadCount = NOTIFICATIONS.filter(n => n.unread).length;
+      if (badge) {
+        if (unreadCount > 0) {
+          badge.classList.remove('hidden');
+        } else {
+          badge.classList.add('hidden');
+        }
+      }
+
+      if (NOTIFICATIONS.length === 0) {
+        container.innerHTML = `
+          <div class="py-8 text-center space-y-2">
+            <div class="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mx-auto">
+              <i data-lucide="bell-off" class="w-5 h-5"></i>
+            </div>
+            <p class="font-cinzel text-xs font-bold text-amber-200">No new notifications</p>
+            <p class="text-[11px] text-amber-200/50">You're all caught up.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = NOTIFICATIONS.map(item => `
+        <div onclick="handleNotificationClick(${item.id})" class="p-2.5 rounded-xl border transition-all cursor-pointer flex items-start space-x-3 ${
+          item.unread 
+            ? 'bg-amber-500/15 border-amber-500/35 hover:border-amber-400 text-amber-100 shadow-md' 
+            : 'bg-stone-900/40 border-transparent hover:border-amber-500/20 text-amber-200/60 opacity-80'
+        }">
+          <div class="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-300 flex-shrink-0 mt-0.5">
+            <i data-lucide="${getNotificationIcon(item.type)}" class="w-3.5 h-3.5"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between">
+              <h4 class="font-cinzel text-xs font-bold ${item.unread ? 'text-amber-200' : 'text-amber-200/70'} truncate">${item.title}</h4>
+              ${item.unread ? '<span class="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 ml-2 animate-pulse"></span>' : ''}
+            </div>
+            <p class="text-[11px] ${item.unread ? 'text-amber-200/80' : 'text-amber-200/50'} mt-0.5 leading-snug line-clamp-2">${item.message}</p>
+            <span class="text-[10px] text-amber-400/60 mt-1 block">• ${item.time}</span>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function handleNotificationClick(id) {
+      const notif = NOTIFICATIONS.find(n => n.id === id);
+      if (notif) {
+        notif.unread = false;
+        renderNotifications();
+        closeNotificationsMenu();
+        if (notif.type && notif.type !== 'info') {
+          openExperienceNav(notif.type);
+        }
+      }
+    }
+
+    function markAllNotificationsAsRead(e) {
+      if (e) e.stopPropagation();
+      NOTIFICATIONS.forEach(n => n.unread = false);
+      renderNotifications();
+    }
+
+    function toggleNotificationsMenu(e) {
+      if (e) e.stopPropagation();
+      const dropdown = document.getElementById('notifications-dropdown');
+      if (!dropdown) return;
+      if (dropdown.classList.contains('opacity-100')) {
+        closeNotificationsMenu();
+      } else {
+        hideExperiencesMenu(true);
+        dropdown.classList.remove('opacity-0', 'pointer-events-none');
+        dropdown.classList.add('opacity-100', 'pointer-events-auto');
+        renderNotifications();
+      }
+    }
+
+    function closeNotificationsMenu() {
+      const dropdown = document.getElementById('notifications-dropdown');
+      if (dropdown) {
+        dropdown.classList.add('opacity-0', 'pointer-events-none');
+        dropdown.classList.remove('opacity-100', 'pointer-events-auto');
+      }
+    }
+
     document.addEventListener('click', (e) => {
       const container = document.getElementById('experiences-nav-container');
       if (container && !container.contains(e.target)) {
         hideExperiencesMenu(true);
+      }
+
+      const notifContainer = document.getElementById('notification-bell-container');
+      if (notifContainer && !notifContainer.contains(e.target)) {
+        closeNotificationsMenu();
       }
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         hideExperiencesMenu(true);
+        closeNotificationsMenu();
       }
     });
 
