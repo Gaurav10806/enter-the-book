@@ -1,4 +1,4 @@
-# The Missing Nation — Immersive Book Experience
+# Enter The Book — Immersive Book Experience
 
 > Transforming books from passive reading experiences into interactive digital worlds.
 
